@@ -8,6 +8,8 @@ import android.hardware.SensorEventListener;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import android.hardware.Sensor;
@@ -15,17 +17,18 @@ import android.hardware.SensorManager;
 import android.widget.Toast;
 
 import com.example.smartwatchdaq.databinding.ActivityMainBinding;
-import com.google.type.Date;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
-
-import java.io.PrintWriter;
 
 
 public class MainActivity extends Activity implements SensorEventListener{
@@ -36,14 +39,13 @@ public class MainActivity extends Activity implements SensorEventListener{
     private Sensor mAccelerometer;
     ArrayList<String> AccelerometerData = new ArrayList<String>();
     int counter = 0;
-
+    boolean IsDataRequested = false;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         mSensorManager = ((SensorManager)getSystemService(SENSOR_SERVICE));
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-
         super.onCreate(savedInstanceState);
         if (checkSelfPermission(Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions( new String[]{Manifest.permission.BODY_SENSORS}, 1);
@@ -61,8 +63,6 @@ public class MainActivity extends Activity implements SensorEventListener{
         mTextView = binding.text;
         // List all different types of sensors getSensorList(). https://developer.android.com/guide/topics/sensors/sensors_overview
         List<Sensor> sensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
-//        List<Sensor> sensorsVendor = mSensorManager.get//(Sensor.TYPE_ALL);
-
         ArrayList<String> arrayList = new ArrayList<String>();
         ArrayList<String> sensorVendor = new ArrayList<String>();
 
@@ -70,28 +70,24 @@ public class MainActivity extends Activity implements SensorEventListener{
             sensorVendor.add(sensor.getVendor());
             arrayList.add(sensor.getName());
         }
-        //arrayList.forEach((n) -> System.out.println(n));
         for (int i = 0 ; i <arrayList.size() ; i++){
             System.out.println(arrayList.get(i) + ",vendor," +sensorVendor.get(i));
         }
-
-
         System.out.println("Sensor Vendor");
 
-//        sensorVendor.forEach((n) -> System.out.println(n));
     }
     protected void onResume() {
         super.onResume();
         mSensorManager.registerListener((SensorEventListener) this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         Sensor accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        if (accelerometer != null) {
-            Log.d("Sensor Sampling Rate--", String.valueOf(SensorManager.SENSOR_DELAY_NORMAL));
 
+        if (accelerometer != null) {
+
+            Log.d("Sensor Sampling Rate--", String.valueOf(SensorManager.SENSOR_DELAY_NORMAL));
 
         }
         mSensorManager.registerListener((SensorEventListener) this, accelerometer,
                 SensorManager.SENSOR_DELAY_NORMAL);
-        //Log.d("Accelerometer data ------",accelerometer.toString());
     }
 
     protected void onPause() {
@@ -100,33 +96,47 @@ public class MainActivity extends Activity implements SensorEventListener{
     }
 
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Log.d("Accelerometer Sensor data ------",sensor.toString());
-        //Log.d("Accelerometer Sensor data accuracy ------", String.valueOf(accuracy));
 
     }
+
     // SensorEvent: This class represents a Sensor event and holds information such as the sensor's type, the time-stamp, accuracy and of course the sensor's data.
     public void onSensorChanged(SensorEvent event) {
-        try {
+
             String data_accelerometer = event.accuracy + "," + event.sensor + "," + event.timestamp +","+ String.valueOf(event.values[0]) + ","+String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
+            AccelerometerData.add(data_accelerometer);
             System.out.println("data_accelerometer: " + data_accelerometer);
+
+    }
+    public void save_data(View view){
+        System.out.println("BUTTON PRESSED : Sensors Button Pressed");
+        onPause();
+        try{
             File sdCard = Environment.getExternalStorageDirectory();
             File dir = new File(sdCard.getAbsolutePath() + "/Download");
             System.out.println("DIRECTORY: ---" + dir.toString());
-            if(!dir.exists()) {
+            if(!dir.exists()) { // if directory does not exist then create one.
                 dir.mkdirs();
             }
-            //System.out.println(dirsMade);
-//            Log.v("Accel", dirsMade.toString());
+            Date currentTime = Calendar.getInstance().getTime();
+            long time= System.currentTimeMillis();
+            System.out.println("DATE AND TIME CURRENT: ---" + time);
 
-            File file = new File(dir, "/"+ "output_acc_example1.csv");
+            File file = new File(dir, "/"+ "acc_"+ time +".csv");
             if (!file.exists()) {
                 file.createNewFile();
             }
             FileOutputStream f = new FileOutputStream(file);
-
-
+            OutputStreamWriter osw = new OutputStreamWriter(f, StandardCharsets.UTF_8);
+            // Buffer is needed to create the UTF 8 formatting and
+            BufferedWriter writer = new BufferedWriter(osw);
+            //total 13 String data_accelerometer = event.accuracy + "," + event.sensor + "," + event.timestamp +","+ String.valueOf(event.values[0]) + ","+String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
+            String mHeader ="EventAccuracy,"+"EventSensorName,"+"EventVendorName,"+"Version,"+"Type,"+"MaxRange,"+"Resolution,"+"Power,"+"minDelay,"+"Timestamp,"+"Ax,"+"Ay,"+"Az" ;
+            writer.append(mHeader);
             try {
-                f.write(data_accelerometer.getBytes());
+                for (int i = 0 ; i <AccelerometerData.size() ; i++){
+                    writer.append(AccelerometerData.get(i));
+                    writer.newLine();
+                }
                 f.flush();
                 f.close();
                 Toast.makeText(getBaseContext(), "Data saved", Toast.LENGTH_LONG).show();
@@ -139,5 +149,4 @@ public class MainActivity extends Activity implements SensorEventListener{
             e.printStackTrace();
         }
     }
-
 }
