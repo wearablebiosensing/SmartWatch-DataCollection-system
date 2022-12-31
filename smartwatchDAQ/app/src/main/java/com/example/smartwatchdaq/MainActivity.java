@@ -39,30 +39,43 @@ import java.util.Date;
 import java.util.List;
 
 
-public class MainActivity extends Activity implements SensorEventListener {
+public class MainActivity<one> extends Activity implements SensorEventListener {
     SensorManager mSensorManager;
     private Sensor mAccelerometer;
     ArrayList<String> AccelerometerData = new ArrayList<String>();
+    ArrayList<String> GryData = new ArrayList<String>();
+
     private TextView mTextView;
     private ActivityMainBinding binding;
+    ArrayList<String> SampleRates = new ArrayList<String>();
 
-    int counter = 0;
-    boolean IsDataRequested = false;
     Spinner spinnerSampleRate;
-    String[] sampling_rates = {"10000","20000","30000","40000","50000"};
+
     String selected_value;
     ToggleButton toggleSwitch;
+    boolean acc = false;
+    ToggleButton toggleSwitch2;
+    boolean gry = false;
+    ToggleButton toggleSwitch3;
+
     boolean isDataRequested =false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SampleRates.add(0, "Select SR");
+        SampleRates.add("20000");
+        SampleRates.add("30000");
+        SampleRates.add("40000");
+        SampleRates.add("50000");
+
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         toggleSwitch = findViewById(R.id.toggleButton);
+        toggleSwitch2 = findViewById(R.id.toggleButton2);
 
         spinnerSampleRate = findViewById(R.id.spinner);
         // Initializing the drop down menue adapter.
-        ArrayAdapter<String> adapter= new ArrayAdapter<String>(MainActivity.this,android.R.layout.simple_spinner_item,sampling_rates);
+        ArrayAdapter<String> adapter= new ArrayAdapter<String>(MainActivity.this,android.R.layout.simple_list_item_1,SampleRates);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerSampleRate.setAdapter(adapter);
         spinnerSampleRate.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -86,13 +99,33 @@ public class MainActivity extends Activity implements SensorEventListener {
                     // The toggle is enabled
                     // Run the sensor Activity in the background.
                     System.out.println("Toggle Button is ON !");
+                    acc = true;
                     isDataRequested = true;
                     //startActivity(new Intent(MainActivity.this, SensorActivity.class));
                     onResume();
                 } else {
                     onPause();
                     System.out.println("Toggle Button is OFF !");
-                    save_data(buttonView,  AccelerometerData);
+                    acc = false;
+//                    save_data(buttonView,  AccelerometerData);
+                    save_data(buttonView, AccelerometerData, "acc");
+                }
+            }
+        });
+        toggleSwitch2.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    // The toggle is enabled
+                    // Run the sensor Activity in the background.
+                    System.out.println("Toggle Button is ON !");
+                    gry = true;
+                    //startActivity(new Intent(MainActivity.this, SensorActivity.class));
+                    onResume();
+                } else {
+                    onPause();
+                    System.out.println("Toggle Button is OFF !");
+                    gry = false;
+                    save_data(buttonView,  GryData,"gry");
                 }
             }
         });
@@ -130,18 +163,22 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     protected void onResume() {
         super.onResume();
-        mSensorManager.registerListener((SensorEventListener) this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        Sensor accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-
-        if (accelerometer != null) {
-
-            Log.d("Sensor Sampling Rate--", String.valueOf(SensorManager.SENSOR_DELAY_NORMAL));
-
+        // if recording acc data register listener for acc values.
+        if (acc ==true){
+            Sensor accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            // To change the sampling rate apply it in microseconds.
+            mSensorManager.registerListener((SensorEventListener) this, accelerometer,
+                    20000); // 50 Hz // 20000 = 50Hz in microseconds
+        }
+        // if recording acc data register listener for gry values.
+        if (gry == true){
+            Sensor gyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+            // To change the sampling rate apply it in microseconds.
+            mSensorManager.registerListener((SensorEventListener) this, gyroscope,
+                    20000); // 50 Hz // 20000 = 50Hz in microseconds
         }
 
-        // To change the sampling rate apply it in microseconds.
-        mSensorManager.registerListener((SensorEventListener) this, accelerometer,
-                20000); // 50 Hz // 20000 = 50Hz in microseconds
+
     }
 
     protected void onPause() {
@@ -157,12 +194,19 @@ public class MainActivity extends Activity implements SensorEventListener {
     public void onSensorChanged(SensorEvent event) {
         System.out.println("onSensorChanged() isDataRequested: "  +isDataRequested);
         // If toggle button is on and off start and stop data collection.
-        if (isDataRequested != false){
+        if (acc != false){
             onResume();
             String data_accelerometer = event.accuracy + "," + event.sensor + "," + event.timestamp + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
             AccelerometerData.add(data_accelerometer);
             System.out.println("data_accelerometer: " + data_accelerometer);
-        } else{
+        } if(gry != false){
+            onResume();
+            String data_gryo = event.accuracy + "," + event.sensor + "," + event.timestamp + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
+            GryData.add(data_gryo);
+            System.out.println("data_Gryo--: " + GryData);
+        }
+
+        else{
            System.out.println("Stop Data Collection");
 //            mSensorManager.unregisterListener((SensorEventListener) this);
 
@@ -171,8 +215,9 @@ public class MainActivity extends Activity implements SensorEventListener {
     }
     /*
      * Writes the CSV file with the current timestamp in the file name for accelerometer data.
+     * Takes in the toggle button view, the data to be added, and filename Eg: acc,gry ...
      * */
-    public void save_data(View view, ArrayList<String> AccelerometerData){
+    public void save_data(View view, ArrayList<String> data, String filename){
         System.out.println("BUTTON PRESSED : Sensors Button Pressed");
         try{
             File sdCard = Environment.getExternalStorageDirectory();
@@ -185,7 +230,7 @@ public class MainActivity extends Activity implements SensorEventListener {
             long time= System.currentTimeMillis();
             System.out.println("DATE AND TIME CURRENT: ---" + time);
 
-            File file = new File(dir, "/"+ "acc_"+ time +".csv");
+            File file = new File(dir, "/"+ filename +"_"+ time +".csv");
             if (!file.exists()) {
                 file.createNewFile();
             }
@@ -197,8 +242,8 @@ public class MainActivity extends Activity implements SensorEventListener {
             String mHeader ="EventAccuracy,"+"EventSensorName,"+"EventVendorName,"+"Version,"+"Type,"+"MaxRange,"+"Resolution,"+"Power,"+"minDelay,"+"Timestamp,"+"Ax,"+"Ay,"+"Az" ;
             writer.append(mHeader);
             try {
-                for (int i = 0 ; i <AccelerometerData.size() ; i++){
-                    writer.append(AccelerometerData.get(i));
+                for (int i = 0 ; i <data.size() ; i++){
+                    writer.append(data.get(i));
                     writer.newLine();
                 }
                 f.flush();
