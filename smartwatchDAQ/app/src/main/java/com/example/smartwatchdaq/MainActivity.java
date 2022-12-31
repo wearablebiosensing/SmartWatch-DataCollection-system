@@ -2,6 +2,7 @@ package com.example.smartwatchdaq;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -9,12 +10,19 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.widget.Toast;
+import android.widget.ToggleButton;
+
+import androidx.appcompat.widget.SwitchCompat;
 
 import com.example.smartwatchdaq.databinding.ActivityMainBinding;
 
@@ -31,36 +39,67 @@ import java.util.Date;
 import java.util.List;
 
 
-public class MainActivity extends Activity implements SensorEventListener{
-
-    private TextView mTextView;
-    private ActivityMainBinding binding;
+public class MainActivity extends Activity implements SensorEventListener {
     SensorManager mSensorManager;
     private Sensor mAccelerometer;
     ArrayList<String> AccelerometerData = new ArrayList<String>();
+    private TextView mTextView;
+    private ActivityMainBinding binding;
+
     int counter = 0;
     boolean IsDataRequested = false;
-
-
+    Spinner spinnerSampleRate;
+    String[] sampling_rates = {"10000","20000","30000","40000","50000"};
+    String selected_value;
+    ToggleButton toggleSwitch;
+    boolean isDataRequested =false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        mSensorManager = ((SensorManager)getSystemService(SENSOR_SERVICE));
-        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         super.onCreate(savedInstanceState);
-        if (checkSelfPermission(Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions( new String[]{Manifest.permission.BODY_SENSORS}, 1);
-        } else {
-            Log.d( "ADD tag","ALREADY GRANTED");
-        }
-        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions( new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-        } else {
-            Log.d( "ADD tag","ALREADY GRANTED");
-        }
-
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        toggleSwitch = findViewById(R.id.toggleButton);
+
+        spinnerSampleRate = findViewById(R.id.spinner);
+        // Initializing the drop down menue adapter.
+        ArrayAdapter<String> adapter= new ArrayAdapter<String>(MainActivity.this,android.R.layout.simple_spinner_item,sampling_rates);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerSampleRate.setAdapter(adapter);
+        spinnerSampleRate.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                String value =adapterView.getItemAtPosition(i).toString();
+                selected_value = value;
+                Toast.makeText(MainActivity.this,value,Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+        System.out.println("DROP DOWN VALUE" + selected_value);
         mTextView = binding.text;
+        toggleSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    // The toggle is enabled
+                    // Run the sensor Activity in the background.
+                    System.out.println("Toggle Button is ON !");
+                    isDataRequested = true;
+                    //startActivity(new Intent(MainActivity.this, SensorActivity.class));
+                    onResume();
+                } else {
+                    onPause();
+                    System.out.println("Toggle Button is OFF !");
+                    save_data(buttonView,  AccelerometerData);
+                }
+            }
+        });
+
+        mSensorManager = ((SensorManager)getSystemService(SENSOR_SERVICE));
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
         // List all different types of sensors getSensorList(). https://developer.android.com/guide/topics/sensors/sensors_overview
         List<Sensor> sensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
         ArrayList<String> arrayList = new ArrayList<String>();
@@ -75,7 +114,20 @@ public class MainActivity extends Activity implements SensorEventListener{
         }
         System.out.println("Sensor Vendor");
 
+        if (checkSelfPermission(Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions( new String[]{Manifest.permission.BODY_SENSORS}, 1);
+        } else {
+            Log.d( "ADD tag","ALREADY GRANTED");
+        }
+        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions( new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+        } else {
+            Log.d( "ADD tag","ALREADY GRANTED");
+        }
+
+
     }
+
     protected void onResume() {
         super.onResume();
         mSensorManager.registerListener((SensorEventListener) this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
@@ -86,8 +138,10 @@ public class MainActivity extends Activity implements SensorEventListener{
             Log.d("Sensor Sampling Rate--", String.valueOf(SensorManager.SENSOR_DELAY_NORMAL));
 
         }
+
+        // To change the sampling rate apply it in microseconds.
         mSensorManager.registerListener((SensorEventListener) this, accelerometer,
-                SensorManager.SENSOR_DELAY_NORMAL);
+                20000); // 50 Hz // 20000 = 50Hz in microseconds
     }
 
     protected void onPause() {
@@ -101,15 +155,25 @@ public class MainActivity extends Activity implements SensorEventListener{
 
     // SensorEvent: This class represents a Sensor event and holds information such as the sensor's type, the time-stamp, accuracy and of course the sensor's data.
     public void onSensorChanged(SensorEvent event) {
-
-            String data_accelerometer = event.accuracy + "," + event.sensor + "," + event.timestamp +","+ String.valueOf(event.values[0]) + ","+String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
+        System.out.println("onSensorChanged() isDataRequested: "  +isDataRequested);
+        // If toggle button is on and off start and stop data collection.
+        if (isDataRequested != false){
+            onResume();
+            String data_accelerometer = event.accuracy + "," + event.sensor + "," + event.timestamp + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
             AccelerometerData.add(data_accelerometer);
             System.out.println("data_accelerometer: " + data_accelerometer);
+        } else{
+           System.out.println("Stop Data Collection");
+//            mSensorManager.unregisterListener((SensorEventListener) this);
+
+        }
 
     }
-    public void save_data(View view){
+    /*
+     * Writes the CSV file with the current timestamp in the file name for accelerometer data.
+     * */
+    public void save_data(View view, ArrayList<String> AccelerometerData){
         System.out.println("BUTTON PRESSED : Sensors Button Pressed");
-        onPause();
         try{
             File sdCard = Environment.getExternalStorageDirectory();
             File dir = new File(sdCard.getAbsolutePath() + "/Download");
