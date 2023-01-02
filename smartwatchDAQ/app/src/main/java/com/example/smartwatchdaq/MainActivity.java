@@ -38,11 +38,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+/* Useful Resources:
+*  https://developer.android.com/training/monitoring-device-state/battery-monitoring
+* */
 
 public class MainActivity<one> extends Activity implements SensorEventListener {
     SensorManager mSensorManager;
     private Sensor mAccelerometer;
-    // Variables to store data streams from Sesnosrs.
+    // Variables to store data streams from Sensosrs.
     ArrayList<String> AccelerometerData = new ArrayList<String>();
     ArrayList<String> GryData = new ArrayList<String>();
     ArrayList<String> HRData = new ArrayList<String>();
@@ -57,7 +60,10 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
     Spinner spinnerSampleRate3;
     String JSONdata;
     // To get the selected value to use it in on_resume() methods.
-    String selected_value_sr;
+    String selected_value_sr_acc; // for Acc
+    String selected_value_sr_gry; // for gry
+    String selected_value_sr_hr; // for HR
+
     ToggleButton toggleSwitch;
     boolean acc = false;
     ToggleButton toggleSwitch2;
@@ -73,7 +79,7 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Initialize prefered sampling rates.
-        SampleRates.add(0, "Select SR");
+        SampleRates.add(0, "Select SR..");
         SampleRates.add("20000");
         SampleRates.add("30000");
         SampleRates.add("40000");
@@ -90,17 +96,22 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
         toggleSwitch3 = findViewById(R.id.toggleButton3);
 
         spinnerSampleRate1 = findViewById(R.id.spinner);
+        spinnerSampleRate2 = findViewById(R.id.spinner2);
+        spinnerSampleRate3 = findViewById(R.id.spinner3);
 
         // Initializing the drop down menue.
-        ArrayAdapter<String> adapter= new ArrayAdapter<String>(MainActivity.this,android.R.layout.simple_list_item_1,SampleRates);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        ArrayAdapter<String> adapter= new ArrayAdapter<String>(MainActivity.this,R.layout.selected_dropdown_item,SampleRates);
+        adapter.setDropDownViewResource(R.layout.dropdown_item);
         spinnerSampleRate1.setAdapter(adapter);
+        spinnerSampleRate2.setAdapter(adapter);
+        spinnerSampleRate3.setAdapter(adapter);
+
         spinnerSampleRate1.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                String value =adapterView.getItemAtPosition(i).toString();
-                selected_value_sr = value;
-                Toast.makeText(MainActivity.this,value,Toast.LENGTH_SHORT).show();
+                selected_value_sr_acc  = adapterView.getItemAtPosition(i).toString();
+//                selected_value_sr = value;
+                //Toast.makeText(MainActivity.this,"SR selected:" + selected_value_sr_acc,Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -108,52 +119,85 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
 
             }
         });
-        /*Toggle Switch On Change Event listenters*/
-        toggleSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
+        spinnerSampleRate2.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                selected_value_sr_gry  = adapterView.getItemAtPosition(i).toString();
+//                selected_value_sr = value;
+                Toast.makeText(MainActivity.this,"SR selected:" + selected_value_sr_gry,Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+        spinnerSampleRate3.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                selected_value_sr_hr  = adapterView.getItemAtPosition(i).toString();
+//                selected_value_sr = value;
+                Toast.makeText(MainActivity.this,"SR selected:" + selected_value_sr_hr,Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+
+
+        /*Toggle Switch On Change Event listeners*/
+        toggleSwitch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(toggleSwitch.isChecked()){
                     // The toggle is enabled
                     // Run the sensor Activity in the background.
                     System.out.println("Toggle Button is ON !");
-                    System.out.println("DROP DOWN VALUE" + selected_value_sr);
-
+                    System.out.println("DROP DOWN VALUE---" + selected_value_sr_acc);
                     acc = true;
                     //startActivity(new Intent(MainActivity.this, SensorActivity.class));
                     onResume();
-                } else {
+                } else if(!toggleSwitch.isChecked()){
                     onPause();
                     System.out.println("Toggle Button is OFF !");
                     acc = false;
 //                    save_data(buttonView,  AccelerometerData);
-                    save_data(buttonView, AccelerometerData, "acc");
-                    save_Jsondata(buttonView,  JSONdata, "acc_info");
+                    save_data(view, AccelerometerData, selected_value_sr_acc +"_acc");
+                    save_Jsondata(view,  JSONdata, "acc_info");
                 }
             }
         });
-        toggleSwitch2.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
+        toggleSwitch2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (toggleSwitch2.isChecked()) {
                     // The toggle is enabled
                     // Run the sensor Activity in the background.
                     System.out.println("Toggle Button is ON !");
                     gry = true;
+                    System.out.println("DROP DOWN VALUE gry---" + selected_value_sr_gry);
+
                     //startActivity(new Intent(MainActivity.this, SensorActivity.class));
                     onResume();
                 } else {
                     onPause();
                     System.out.println("Toggle Button is OFF !");
                     gry = false;
-                    save_data(buttonView,  GryData,"gry");
+                    save_data(view,  GryData,selected_value_sr_gry+"_gry");
                 }
             }
         });
 
-        toggleSwitch3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
+        toggleSwitch3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(toggleSwitch3.isChecked()){
                     // The toggle is enabled
                     // Run the sensor Activity in the background.
                     System.out.println("Toggle Button is ON !");
+                    System.out.println("DROP DOWN VALUE hr---" + selected_value_sr_hr);
                     hr = true;
                     //startActivity(new Intent(MainActivity.this, SensorActivity.class));
                     onResume();
@@ -161,7 +205,7 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
                     onPause();
                     System.out.println("Toggle Button is OFF !");
                     hr = false;
-                    save_data(buttonView,  HRData,"hr");
+                    save_data(view,  HRData,selected_value_sr_hr + "_hr");
                 }
             }
         });
@@ -197,24 +241,25 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
         super.onResume();
         // if recording acc data register listener for acc values.
         if (acc ==true){
+            System.out.println("Int Vale for SR --"+Integer.parseInt(selected_value_sr_acc));
             Sensor accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             // To change the sampling rate apply it in microseconds.
             mSensorManager.registerListener((SensorEventListener) this, accelerometer,
-                    20000); // 50 Hz // 20000 = 50Hz in microseconds
+                    Integer.parseInt(selected_value_sr_acc)); // 50 Hz // 20000 = 50Hz in microseconds
         }
         // if recording acc data register listener for gry values.
         if (gry == true){
             Sensor gyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
             // To change the sampling rate apply it in microseconds.
             mSensorManager.registerListener((SensorEventListener) this, gyroscope,
-                    20000); // 50 Hz // 20000 microseconds = 50Hz in
+                    Integer.parseInt(selected_value_sr_gry)); // 50 Hz // 20000 microseconds = 50Hz in
         }
         // if recording acc data register listener for gry values.
         if (hr == true){
             Sensor heart_rate = mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
             // To change the sampling rate apply it in microseconds.
             mSensorManager.registerListener((SensorEventListener) this, heart_rate,
-                    20000); // 1 Hz // 1000000 = 1Hz
+                    Integer.parseInt(selected_value_sr_hr)); // 1 Hz // 1000000 = 1Hz
         }
        // HRData
     }
@@ -291,7 +336,7 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
                 }
                 f.flush();
                 f.close();
-                Toast.makeText(getBaseContext(), "Data saved", Toast.LENGTH_LONG).show();
+                Toast.makeText(getBaseContext(), filename + " Data saved", Toast.LENGTH_LONG).show();
             } catch (IOException e) {
                 e.printStackTrace();
             }

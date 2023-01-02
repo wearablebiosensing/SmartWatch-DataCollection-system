@@ -3,5 +3,6 @@
 
     <color name="white">#FFFFFF</color>
     <color name="teal">#18808B</color>
+    <color name="lightteal">    #7BC2BC</color>
 
 </resources>
