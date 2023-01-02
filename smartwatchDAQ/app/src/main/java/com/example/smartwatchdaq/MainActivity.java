@@ -79,11 +79,22 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Initialize prefered sampling rates.
+        /*
+        * 10-100000,20-50000,30-33333.33,40-25000,50-200000,
+        * 60-16666.666,70-14285.71,80-12500,90-11111.111,100 - 10000
+        * 110-9090.909,120-8333.333,130-7692.307,140-7142.857,150-6666.6666,160 - 6250,
+        * 170- 5882.352,180-5555.55555,190-5263.15789,200 - 5000
+        * */
         SampleRates.add(0, "Select SR..");
-        SampleRates.add("20000");
-        SampleRates.add("30000");
-        SampleRates.add("40000");
-        SampleRates.add("50000");
+        SampleRates.add("100000"); // 10Hz
+        SampleRates.add("50000");  // 20Hz
+        SampleRates.add("25000");  // 40Hz
+        SampleRates.add("200000"); // 50Hz
+        SampleRates.add("12500");  // 80Hz
+        SampleRates.add("10000");  // 100Hz
+        SampleRates.add("6250");   // 160Hz
+        SampleRates.add("5000");  // 200Hz
+
         // Initialize the Sensor Manager
         mSensorManager = ((SensorManager)getSystemService(SENSOR_SERVICE));
 
