@@ -3,6 +3,13 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
+        <entry key="$USER_HOME$/Library/Caches/Google/AndroidStudio2021.2/device-explorer/English_2_-_Wear_OS_Small_Round_API_30 [emulator-5554]/sdcard/Download/100000_acc_1672714158565.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="$USER_HOME$/Library/Caches/Google/AndroidStudio2021.2/device-explorer/English_2_-_Wear_OS_Small_Round_API_30 [emulator-5554]/sdcard/Download/40000_acc_1672642233062.csv">
           <value>
             <Attribute>
@@ -18,6 +25,13 @@
           </value>
         </entry>
         <entry key="$USER_HOME$/Library/Caches/Google/AndroidStudio2021.2/device-explorer/English_2_-_Wear_OS_Small_Round_API_30 [emulator-5554]/sdcard/Download/50000_gry_1672642249035.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="$USER_HOME$/Library/Caches/Google/AndroidStudio2021.2/device-explorer/English_2_-_Wear_OS_Small_Round_API_30 [emulator-5554]/sdcard/Download/5000_acc_1673029143377.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

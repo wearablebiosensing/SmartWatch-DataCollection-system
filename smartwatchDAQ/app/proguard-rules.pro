@@ -1,4 +1,8 @@
 # Add project specific ProGuard rules here.
+
+-keepclassmembernames class io.netty.** { *; }
+-keepclassmembers class org.jctools.** { *; }
+
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.
 #

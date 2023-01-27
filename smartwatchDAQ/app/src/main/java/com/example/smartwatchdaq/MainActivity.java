@@ -1,8 +1,8 @@
 package com.example.smartwatchdaq;
+import com.example.smartwatchdaq.databinding.ActivityMainBinding;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -12,8 +12,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -21,10 +19,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-
-import androidx.appcompat.widget.SwitchCompat;
-
-import com.example.smartwatchdaq.databinding.ActivityMainBinding;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -38,8 +32,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+
 /* Useful Resources:
 *  https://developer.android.com/training/monitoring-device-state/battery-monitoring
+* https://hivemq.github.io/hivemq-mqtt-client/docs/client-configuration/
+* https://github.com/hivemq/hivemq-mqtt-client
 * */
 
 public class MainActivity<one> extends Activity implements SensorEventListener {
@@ -49,6 +46,8 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
     ArrayList<String> AccelerometerData = new ArrayList<String>();
     ArrayList<String> GryData = new ArrayList<String>();
     ArrayList<String> HRData = new ArrayList<String>();
+    // Create an MQTT Client.
+
 
     // Wearable DAQ Text View.
     private TextView mTextView;
@@ -79,21 +78,30 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Initialize prefered sampling rates.
-        /*
+        /* https://www.ehow.co.uk/how_7566601_calculate-original-price-after-discount.html
         * 10-100000,20-50000,30-33333.33,40-25000,50-200000,
         * 60-16666.666,70-14285.71,80-12500,90-11111.111,100 - 10000
         * 110-9090.909,120-8333.333,130-7692.307,140-7142.857,150-6666.6666,160 - 6250,
         * 170- 5882.352,180-5555.55555,190-5263.15789,200 - 5000
         * */
+        // Conversion base : 1 µs(p) = 10,00,000 Hz.
+        // 100000 us = ? Hz .1000000/100000.
         SampleRates.add(0, "Select SR..");
-        SampleRates.add("100000"); // 10Hz
-        SampleRates.add("50000");  // 20Hz
-        SampleRates.add("25000");  // 40Hz
-        SampleRates.add("200000"); // 50Hz
-        SampleRates.add("12500");  // 80Hz
-        SampleRates.add("10000");  // 100Hz
-        SampleRates.add("6250");   // 160Hz
-        SampleRates.add("5000");  // 200Hz
+        // A period of 1 Millisecond is equal to 1000 Hertz frequency.
+        // 1Hz = 1/1 Millisecond.
+       // 1 mili = 1000 micoro second
+        // 10Hz = 1/10Hz * 1000 milisecond.
+        // ==> 10Hz = 1/10Hz * 1000000 micro seconds.
+        // =======>>>> ==> #Hz = 1/#Hz * 1000000 micro seconds.
+        SampleRates.add("10"); // 1,00,000us - 10Hz ( 10,00,000/1,00,000)- COVERT TO HZs.
+        SampleRates.add("20");  // 50000 us - 20Hz (10,00,000/50000)
+        SampleRates.add("40");  // 25000 us 40Hz (10,00,000/25000)
+        SampleRates.add("50"); // 200000 us - 50Hz (10,00,000/200000)
+        SampleRates.add("64"); // 1562 us - 64Hz (10,00,000/ 1562)
+        SampleRates.add("100");  // 10000 us - 100Hz (10,00,000/10000)
+        SampleRates.add("128");//  7812 - 128Hz (10,00,000/7812)
+        SampleRates.add("160");   // 6250 - 160Hz (10,00,000/"6250")
+        SampleRates.add("200");  // 5000 - 200Hz (10,00,000/5000)
 
         // Initialize the Sensor Manager
         mSensorManager = ((SensorManager)getSystemService(SENSOR_SERVICE));
@@ -255,22 +263,23 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
             System.out.println("Int Vale for SR --"+Integer.parseInt(selected_value_sr_acc));
             Sensor accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             // To change the sampling rate apply it in microseconds.
+            // 1/#Hz * 1000000 micro seconds.
             mSensorManager.registerListener((SensorEventListener) this, accelerometer,
-                    Integer.parseInt(selected_value_sr_acc)); // 50 Hz // 20000 = 50Hz in microseconds
+                    (1/Integer.parseInt(selected_value_sr_acc))*1000000); // 50 Hz // 20000 = 50Hz in microseconds
         }
         // if recording acc data register listener for gry values.
         if (gry == true){
             Sensor gyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
             // To change the sampling rate apply it in microseconds.
             mSensorManager.registerListener((SensorEventListener) this, gyroscope,
-                    Integer.parseInt(selected_value_sr_gry)); // 50 Hz // 20000 microseconds = 50Hz in
+                    (1/Integer.parseInt(selected_value_sr_gry))*1000000); // 50 Hz // 20000 microseconds = 50Hz in
         }
         // if recording acc data register listener for gry values.
         if (hr == true){
             Sensor heart_rate = mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
             // To change the sampling rate apply it in microseconds.
             mSensorManager.registerListener((SensorEventListener) this, heart_rate,
-                    Integer.parseInt(selected_value_sr_hr)); // 1 Hz // 1000000 = 1Hz
+                    (1/Integer.parseInt(selected_value_sr_hr))*1000000); // 1 Hz // 1000000 = 1Hz
         }
        // HRData
     }
