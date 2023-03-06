@@ -111,6 +111,7 @@
         android:id="@+id/toggleButton"
         android:layout_width="33dp"
         android:layout_height="34dp"
+        android:onClick="startServiceButtonPressed"
         android:background="@drawable/toggle_button"
         android:text="ToggleButton"
         android:textOff=""

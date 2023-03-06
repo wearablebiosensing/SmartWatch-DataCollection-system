@@ -3,11 +3,14 @@ import com.example.smartwatchdaq.databinding.ActivityMainBinding;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Service;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -19,6 +22,14 @@ import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+
+
+import org.eclipse.paho.android.service.MqttAndroidClient;
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -33,13 +44,31 @@ import java.util.Date;
 import java.util.List;
 
 
-/* Useful Resources:
-*  https://developer.android.com/training/monitoring-device-state/battery-monitoring
+/*
+* Useful Resources:
+* https://developer.android.com/training/monitoring-device-state/battery-monitoring
 * https://hivemq.github.io/hivemq-mqtt-client/docs/client-configuration/
 * https://github.com/hivemq/hivemq-mqtt-client
+*   Foreground Services:
+* https://www.youtube.com/watch?v=G9M_HEdclTg
+* https://www.youtube.com/watch?v=BbXuumYactY
+* Android Sensors API:
+* https://developer.android.com/guide/topics/sensors/sensors_overview
 * */
 
 public class MainActivity<one> extends Activity implements SensorEventListener {
+    /*Mqtt connection variables*/
+    private final String TAG = "AiotMqtt";
+
+    final private String PUB_TOPIC = "/smartwatch/acc/";
+
+    /* 阿里云Mqtt服务器域名 */
+    final String host = "broker.hivemq.com";
+
+    String clientId = MqttClient.generateClientId();
+
+    MqttAndroidClient careWearMqttClient;
+
     SensorManager mSensorManager;
     private Sensor mAccelerometer;
     // Variables to store data streams from Sensosrs.
@@ -72,11 +101,36 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
 
 
     private ActivityMainBinding binding;
-
+//    Intent serviceIntent = new Intent(this, MyService.class);
+//    startForegroundService(serviceIntent);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+       careWearMqttClient =
+                new MqttAndroidClient(this.getApplicationContext(), host,
+                        clientId);
+
+        try {
+            IMqttToken token = careWearMqttClient.connect();
+            token.setActionCallback(new IMqttActionListener() {
+                @Override
+                public void onSuccess(IMqttToken asyncActionToken) {
+                    // We are connected
+                    Log.d(TAG, "onSuccess");
+                }
+
+                @Override
+                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                    // Something went wrong e.g. connection timeout or firewall problems
+                    Log.d(TAG, "onFailure");
+
+                }
+            });
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+
         // Initialize prefered sampling rates.
         /* https://www.ehow.co.uk/how_7566601_calculate-original-price-after-discount.html
         * 10-100000,20-50000,30-33333.33,40-25000,50-200000,
@@ -170,7 +224,9 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
         toggleSwitch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                // start the service in background even if the user quits the app.
                 if(toggleSwitch.isChecked()){
+//                    startServiceButtonPressed(view);
                     // The toggle is enabled
                     // Run the sensor Activity in the background.
                     System.out.println("Toggle Button is ON !");
@@ -186,12 +242,14 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
                     save_data(view, AccelerometerData, selected_value_sr_acc +"_acc");
                     save_Jsondata(view,  JSONdata, "acc_info");
                 }
+
             }
         });
         toggleSwitch2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (toggleSwitch2.isChecked()) {
+//                    startServiceButtonPressed(view);
                     // The toggle is enabled
                     // Run the sensor Activity in the background.
                     System.out.println("Toggle Button is ON !");
@@ -201,7 +259,7 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
                     //startActivity(new Intent(MainActivity.this, SensorActivity.class));
                     onResume();
                 } else {
-                    onPause();
+//                    onPause();
                     System.out.println("Toggle Button is OFF !");
                     gry = false;
                     save_data(view,  GryData,selected_value_sr_gry+"_gry");
@@ -221,7 +279,8 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
                     //startActivity(new Intent(MainActivity.this, SensorActivity.class));
                     onResume();
                 } else {
-                    onPause();
+//                    startServiceButtonPressed(view);
+//                    onPause();
                     System.out.println("Toggle Button is OFF !");
                     hr = false;
                     save_data(view,  HRData,selected_value_sr_hr + "_hr");
@@ -255,6 +314,31 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
             Log.d( "ADD tag","ALREADY GRANTED");
         }
     }
+    public void publishMessage(String payload) {
+        try {
+            if (careWearMqttClient.isConnected() == false) {
+                careWearMqttClient.connect();
+            }
+
+            MqttMessage message = new MqttMessage();
+            message.setPayload(payload.getBytes());
+            message.setQos(0);
+            careWearMqttClient.publish(PUB_TOPIC, message,null, new IMqttActionListener() {
+                @Override
+                public void onSuccess(IMqttToken asyncActionToken) {
+                    Log.i(TAG, "publish succeed!");
+                }
+
+                @Override
+                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                    Log.i(TAG, "publish failed!");
+                }
+            });
+        } catch (MqttException e) {
+            Log.e(TAG, e.toString());
+            e.printStackTrace();
+        }
+    }
 
     protected void onResume() {
         super.onResume();
@@ -283,11 +367,11 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
         }
        // HRData
     }
-    // unregisted all sensors when not used.
-    protected void onPause() {
-        super.onPause();
-        mSensorManager.unregisterListener((SensorEventListener) this);
-    }
+//    // unregisted all sensors when not used.
+//    protected void onPause() {
+//        super.onPause();
+//        mSensorManager.unregisterListener((SensorEventListener) this);
+//    }
 
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
@@ -304,6 +388,8 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
 
             String data_accelerometer =  event.timestamp + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
             AccelerometerData.add(data_accelerometer);
+            publishMessage(data_accelerometer);
+
             System.out.println("data_accelerometer: " + data_accelerometer);
         } if(gry != false){
             onResume();
@@ -317,9 +403,10 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
             System.out.println("data Heart Rate--: " + HRData);
         }
 
-        else{
-           System.out.println("Stop Data Collection!");
-        }
+//        else{
+//           System.out.println("Stop Data Collection!");
+//            onResume();
+//        }
     }
     /*
      * Writes the CSV file with the current timestamp in the file name for accelerometer data.
@@ -366,6 +453,7 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
             e.printStackTrace();
         }
     }
+
     public void save_Jsondata(View view, String jsonData, String filename){
         System.out.println("BUTTON PRESSED : Sensors Button Pressed");
         try{
@@ -404,5 +492,6 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
             e.printStackTrace();
         }
     }
+
 
 }
