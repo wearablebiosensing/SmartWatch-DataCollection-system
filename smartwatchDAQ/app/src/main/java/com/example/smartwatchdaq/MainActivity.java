@@ -1,32 +1,41 @@
 package com.example.smartwatchdaq;
+import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+
 import com.example.smartwatchdaq.databinding.ActivityMainBinding;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.Service;
-import android.content.Intent;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
+
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -57,22 +66,21 @@ import java.util.List;
 * */
 
 public class MainActivity<one> extends Activity implements SensorEventListener {
-    /*Mqtt connection variables*/
-    private final String TAG = "AiotMqtt";
+    private ArrayList permissionsToRequest;
+    private ArrayList permissionsRejected = new ArrayList();
+    private ArrayList permissions = new ArrayList();
 
-    final private String PUB_TOPIC = "/smartwatch/acc/";
-
-    /* 阿里云Mqtt服务器域名 */
-    final String host = "broker.hivemq.com";
-
-    String clientId = MqttClient.generateClientId();
-
-    MqttAndroidClient careWearMqttClient;
+    private final static int ALL_PERMISSIONS_RESULT = 101;
+    LocationTrack locationTrack;
 
     SensorManager mSensorManager;
+    MqttHelper mqttHelper;
+
     private Sensor mAccelerometer;
     // Variables to store data streams from Sensosrs.
     ArrayList<String> AccelerometerData = new ArrayList<String>();
+    ArrayList<Float> AccelerometerDataFloat = new ArrayList<Float>();
+
     ArrayList<String> GryData = new ArrayList<String>();
     ArrayList<String> HRData = new ArrayList<String>();
     // Create an MQTT Client.
@@ -107,29 +115,7 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-       careWearMqttClient =
-                new MqttAndroidClient(this.getApplicationContext(), host,
-                        clientId);
 
-        try {
-            IMqttToken token = careWearMqttClient.connect();
-            token.setActionCallback(new IMqttActionListener() {
-                @Override
-                public void onSuccess(IMqttToken asyncActionToken) {
-                    // We are connected
-                    Log.d(TAG, "onSuccess");
-                }
-
-                @Override
-                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                    // Something went wrong e.g. connection timeout or firewall problems
-                    Log.d(TAG, "onFailure");
-
-                }
-            });
-        } catch (MqttException e) {
-            e.printStackTrace();
-        }
 
         // Initialize prefered sampling rates.
         /* https://www.ehow.co.uk/how_7566601_calculate-original-price-after-discount.html
@@ -313,33 +299,77 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
         } else {
             Log.d( "ADD tag","ALREADY GRANTED");
         }
+
+        /*Location service init*/
+        permissions.add(ACCESS_FINE_LOCATION);
+        permissions.add(ACCESS_COARSE_LOCATION);
+
+        permissionsToRequest = findUnAskedPermissions(permissions);
+        //get the permissions we have asked for before but are not granted..
+        //we will store this in a global list to access later.
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
+
+            if (permissionsToRequest.size() > 0)
+                requestPermissions((String[]) permissionsToRequest.toArray(new String[permissionsToRequest.size()]), ALL_PERMISSIONS_RESULT);
+        }
+
+
+        Button btn = (Button) findViewById(R.id.btn);
+
+
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                locationTrack = new LocationTrack(MainActivity.this);
+
+
+                if (locationTrack.canGetLocation()) {
+
+
+                    double longitude = locationTrack.getLongitude();
+                    double latitude = locationTrack.getLatitude();
+
+                    Toast.makeText(getApplicationContext(), "Longitude:" + Double.toString(longitude) + "\nLatitude:" + Double.toString(latitude), Toast.LENGTH_SHORT).show();
+                } else {
+
+                    locationTrack.showSettingsAlert();
+                }
+
+            }
+        });
     }
-    public void publishMessage(String payload) {
-        try {
-            if (careWearMqttClient.isConnected() == false) {
-                careWearMqttClient.connect();
+    /*
+    private void startMqtt(){
+        mqttHelper = new MqttHelper(getApplicationContext());
+        mqttHelper.setCallback(new MqttCallbackExtended() {
+            @Override
+            public void connectComplete(boolean b, String s) {
+
             }
 
-            MqttMessage message = new MqttMessage();
-            message.setPayload(payload.getBytes());
-            message.setQos(0);
-            careWearMqttClient.publish(PUB_TOPIC, message,null, new IMqttActionListener() {
-                @Override
-                public void onSuccess(IMqttToken asyncActionToken) {
-                    Log.i(TAG, "publish succeed!");
-                }
+            @Override
+            public void connectionLost(Throwable throwable) {
 
-                @Override
-                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                    Log.i(TAG, "publish failed!");
-                }
-            });
-        } catch (MqttException e) {
-            Log.e(TAG, e.toString());
-            e.printStackTrace();
-        }
+            }
+
+            @Override
+            public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
+                Log.w("Debug",mqttMessage.toString());
+                dataReceived.setText(mqttMessage.toString());
+            }
+
+            @Override
+            public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
+
+            }
+        });
     }
 
+     */
     protected void onResume() {
         super.onResume();
         // if recording acc data register listener for acc values.
@@ -379,18 +409,29 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
 
     // SensorEvent: This class represents a Sensor event and holds information such as the sensor's type, the time-stamp, accuracy and of course the sensor's data.
     public void onSensorChanged(SensorEvent event) {
-        System.out.println("onSensorChanged() acc: "  + acc);
-        System.out.println("onSensorChanged() gry: "  + gry);
+//        System.out.println("onSensorChanged() acc: "  + acc);
+//        System.out.println("onSensorChanged() gry: "  + gry);
         // If toggle button is on and off start and stop data collection.
         if (acc != false){
             onResume();
             JSONdata =  event.accuracy + "," + event.sensor;
 
             String data_accelerometer =  event.timestamp + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
+            float sum = event.values[0] +event.values[1]+event.values[2];
+            AccelerometerDataFloat.add(sum);
+            double sum_full_array = 0;
             AccelerometerData.add(data_accelerometer);
-            publishMessage(data_accelerometer);
-
+            // To get the RMS based on only the number of samples.
+            if (AccelerometerDataFloat.size() == 20){
+                for(int i = 0; i < AccelerometerDataFloat.size(); i++) {
+                    sum_full_array += AccelerometerDataFloat.get(i);
+                }
+                double rms = Math.sqrt(sum_full_array*sum_full_array);
+                System.out.println("RMS after 20 Samples =: " + rms);
+            }
             System.out.println("data_accelerometer: " + data_accelerometer);
+//            System.out.println("onSensorChanged() rms: " + rms);
+
         } if(gry != false){
             onResume();
             String data_gryo =  event.timestamp + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1]) + "," + String.valueOf(event.values[2]);
@@ -493,5 +534,82 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
         }
     }
 
+    private ArrayList findUnAskedPermissions(ArrayList wanted) {
+        ArrayList result = new ArrayList();
 
+        for (Object perm : wanted) {
+            if (!hasPermission(perm)) {
+                result.add(perm);
+            }
+        }
+
+        return result;
+    }
+
+    private boolean hasPermission(Object permission) {
+        if (canMakeSmores()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                return (checkSelfPermission((String) permission) == PackageManager.PERMISSION_GRANTED);
+            }
+        }
+        return true;
+    }
+
+    private boolean canMakeSmores() {
+        return (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1);
+    }
+
+
+    @TargetApi(Build.VERSION_CODES.M)
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+
+        switch (requestCode) {
+
+            case ALL_PERMISSIONS_RESULT:
+                for (Object perms : permissionsToRequest) {
+                    if (!hasPermission(perms)) {
+                        permissionsRejected.add(perms);
+                    }
+                }
+
+                if (permissionsRejected.size() > 0) {
+
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        if (shouldShowRequestPermissionRationale((String) permissionsRejected.get(0))) {
+                            showMessageOKCancel("These permissions are mandatory for the application. Please allow access.",
+                                    new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                                requestPermissions((String[]) permissionsRejected.toArray(new String[permissionsRejected.size()]), ALL_PERMISSIONS_RESULT);
+                                            }
+                                        }
+                                    });
+                            return;
+                        }
+                    }
+
+                }
+
+                break;
+        }
+
+    }
+
+    private void showMessageOKCancel(String message, DialogInterface.OnClickListener okListener) {
+        new AlertDialog.Builder(MainActivity.this)
+                .setMessage(message)
+                .setPositiveButton("OK", okListener)
+                .setNegativeButton("Cancel", null)
+                .create()
+                .show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        locationTrack.stopListener();
+    }
 }

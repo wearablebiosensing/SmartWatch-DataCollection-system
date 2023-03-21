@@ -111,7 +111,6 @@
         android:id="@+id/toggleButton"
         android:layout_width="33dp"
         android:layout_height="34dp"
-        android:onClick="startServiceButtonPressed"
         android:background="@drawable/toggle_button"
         android:text="ToggleButton"
         android:textOff=""
@@ -153,6 +152,35 @@
         app:layout_constraintStart_toEndOf="@+id/spinner3"
         app:layout_constraintTop_toBottomOf="@+id/toggleButton2"
         app:layout_constraintVertical_bias="0.18" />
+
+    <Button
+        android:id="@+id/btn"
+        android:layout_width="43dp"
+        android:layout_height="16dp"
+        android:layout_centerInParent="true"
+        android:background="@color/teal"
+        android:text="LOC"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/spinner3" />
+    <!--        android:textSize="5"-->
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.513"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.877" />
+
+    <!--    <TextView-->
+<!--        android:id="@+id/activitesDetect"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="Activity: "-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/spinner3" />-->
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
