@@ -84,8 +84,6 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
     ArrayList<String> GryData = new ArrayList<String>();
     ArrayList<String> HRData = new ArrayList<String>();
     // Create an MQTT Client.
-
-
     // Wearable DAQ Text View.
     private TextView mTextView;
     // Adapter String list for the Spinner drop down menue. Used to select the sampling rate by the user.
@@ -226,7 +224,7 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
                     acc = false;
 //                    save_data(buttonView,  AccelerometerData);
                     save_data(view, AccelerometerData, selected_value_sr_acc +"_acc");
-                    save_Jsondata(view,  JSONdata, "acc_info");
+//                    save_Jsondata(view,  JSONdata, "acc_info");
                 }
 
             }

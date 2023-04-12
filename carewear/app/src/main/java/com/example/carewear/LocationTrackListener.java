@@ -1,4 +1,4 @@
-package com.example.smartwatchdaq;
+package com.example.carewear;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -17,16 +17,18 @@ import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 
-/*
-* Recources used :- https://www.digitalocean.com/community/tutorials/android-location-api-tracking-gps
-*
-* */
-public class LocationTrack extends Service implements LocationListener {
+public class LocationTrackListener extends Service implements LocationListener {
 
     private final Context mContext;
+
+
     boolean checkGPS = false;
+
+
     boolean checkNetwork = false;
+
     boolean canGetLocation = false;
+
     Location loc;
     double latitude;
     double longitude;
@@ -38,14 +40,10 @@ public class LocationTrack extends Service implements LocationListener {
     private static final long MIN_TIME_BW_UPDATES = 1000 * 60 * 1;
     protected LocationManager locationManager;
 
-    public LocationTrack(Context mContext) {
+    public LocationTrackListener(Context mContext) {
         this.mContext = mContext;
         getLocation();
     }
-    /*
-    * Gets the location of the device if th GPS service is avaliable and Wifi id connected.
-    *
-    * */
 
     private Location getLocation() {
 
@@ -193,7 +191,7 @@ public class LocationTrack extends Service implements LocationListener {
                 // for ActivityCompat#requestPermissions for more details.
                 return;
             }
-            locationManager.removeUpdates(LocationTrack.this);
+            locationManager.removeUpdates(LocationTrackListener.this);
         }
     }
 
@@ -222,4 +220,3 @@ public class LocationTrack extends Service implements LocationListener {
 
     }
 }
-
