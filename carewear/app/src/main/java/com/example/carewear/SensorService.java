@@ -107,13 +107,13 @@ public class SensorService extends Service implements SensorEventListener {
 
             if(intent_isFinished == 1){
                     Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS acc/.");
-                    fileio.save_data( AccelerometerData, "30Hz" + "_acc");
+                  //  fileio.save_data( AccelerometerData, "30Hz" + "_acc");
                     Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
-                    fileio.save_data( GryData, "30Hz" + "_gry");
+                   // fileio.save_data( GryData, "30Hz" + "_gry");
                     Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/.");
-                    fileio.save_data( HRData, "1Hz" + "_hr");
+                    //fileio.save_data( HRData, "1Hz" + "_hr");
                     // set intent finished back to 0
-                    //intent_isFinished = 0;
+                    intent_isFinished = 0;
                 }
 
 

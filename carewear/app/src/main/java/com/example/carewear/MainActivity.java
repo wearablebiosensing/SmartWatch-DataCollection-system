@@ -36,12 +36,6 @@ public class MainActivity extends Activity {
         //Intent intentLocationService = new Intent(this, LocationService.class);
         //startService(intentLocationService);
         Log.i(TAG,"intentLocationService Service has started");
-        if(intent_isFinished==1){
-            Log.i(TAG,"MAIN ACT - intent_isFinished - " + intent_isFinished);
-            //stop the sensors service from running in the background.
-            stopService(intentSensorActivity);
-
-        }
 
     }
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {

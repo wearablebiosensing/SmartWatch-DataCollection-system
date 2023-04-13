@@ -11,7 +11,7 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 public class BackgroundTimer extends Service {
-    public int isTimerFinished  = 0;
+    public int isTimerFinished;
     String TAG = "BackgroundTimer";
     public static final   String COUNTDOWN_BR  = "com.example.carewear";
 
@@ -30,11 +30,16 @@ public class BackgroundTimer extends Service {
         countDownTimer = new CountDownTimer(30000,1000) {
             @Override
             public void onTick(long l) {
+                isTimerFinished = 0;
+                intent.putExtra("isTimerFinished",isTimerFinished);
                 Log.i(TAG,"Countdown millis remaining: " + l);
                 // Sennd broadcast to MainActivity
                 intent.putExtra("countdown",l/1000);
-                //intent.putExtra("isTimerFinished",isTimerFinished);
+                if(l/1000==0){
+                    isTimerFinished=1;
+                }
                 sendBroadcast(intent);
+
 
             }
 
@@ -46,15 +51,19 @@ public class BackgroundTimer extends Service {
                 // Broadcast the Intent to the SensorsService Class that the timer is done.
                 intent.putExtra("isTimerFinished",isTimerFinished);
                 sendBroadcast(intent);
+                // Repeat the timer every time it is done.
+                //isTimerFinished = 0; //set intent back to 0 as timer is over.
+                //intent.putExtra("isTimerFinished",isTimerFinished);
+                //sendBroadcast(intent);
+                countDownTimer.start();
 
-                isTimerFinished = 0; //set intent back to 0 as timer is over.
-                intent.putExtra("isTimerFinished",isTimerFinished);
-                sendBroadcast(intent);
-                countDownTimer.start();// restart timer when done.
             }
         };
+
         countDownTimer.start();
         super.onCreate();
+
+
     }
 
     @Override
