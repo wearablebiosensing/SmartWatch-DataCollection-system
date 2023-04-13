@@ -30,19 +30,27 @@ public class BackgroundTimer extends Service {
         countDownTimer = new CountDownTimer(30000,1000) {
             @Override
             public void onTick(long l) {
-                Log.i(TAG,"Countdown millies remaining: " + l);
+                Log.i(TAG,"Countdown millis remaining: " + l);
+                // Sennd broadcast to MainActivity
                 intent.putExtra("countdown",l/1000);
+                //intent.putExtra("isTimerFinished",isTimerFinished);
                 sendBroadcast(intent);
 
             }
 
             @Override
             public void onFinish() {
-                // Do something.
+                // set boolean variable isTimerFinished to 1 i.e timer is finished
                 isTimerFinished = 1;
                 Log.i(TAG, "Timer is finished - " + isTimerFinished);
+                // Broadcast the Intent to the SensorsService Class that the timer is done.
                 intent.putExtra("isTimerFinished",isTimerFinished);
                 sendBroadcast(intent);
+
+                isTimerFinished = 0; //set intent back to 0 as timer is over.
+                intent.putExtra("isTimerFinished",isTimerFinished);
+                sendBroadcast(intent);
+                countDownTimer.start();// restart timer when done.
             }
         };
         countDownTimer.start();
@@ -51,7 +59,8 @@ public class BackgroundTimer extends Service {
 
     @Override
     public void onDestroy() {
-        countDownTimer.cancel();
+        //  Don't cancel the timer re set the timer back to start.
+//        countDownTimer.cancel();
         super.onDestroy();
     }
 }

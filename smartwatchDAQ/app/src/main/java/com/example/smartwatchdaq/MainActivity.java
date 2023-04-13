@@ -316,8 +316,6 @@ public class MainActivity<one> extends Activity implements SensorEventListener {
 
 
         Button btn = (Button) findViewById(R.id.btn);
-
-
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
