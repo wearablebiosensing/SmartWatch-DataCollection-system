@@ -113,7 +113,7 @@ public class SensorService extends Service implements SensorEventListener {
                     Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/.");
                     //fileio.save_data( HRData, "1Hz" + "_hr");
                     // set intent finished back to 0
-                    intent_isFinished = 0;
+                   intent_isFinished = 0;
                 }
 
 

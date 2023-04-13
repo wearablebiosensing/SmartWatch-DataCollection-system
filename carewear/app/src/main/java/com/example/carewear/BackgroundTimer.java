@@ -35,10 +35,17 @@ public class BackgroundTimer extends Service {
                 Log.i(TAG,"Countdown millis remaining: " + l);
                 // Sennd broadcast to MainActivity
                 intent.putExtra("countdown",l/1000);
+                Log.i(TAG,"Countdown millis remaining: " + l/1000);
                 if(l/1000==0){
                     isTimerFinished=1;
+                    intent.putExtra("isTimerFinished",isTimerFinished);
+                    sendBroadcast(intent);
                 }
-                sendBroadcast(intent);
+                else{
+                    isTimerFinished=0;
+                    intent.putExtra("isTimerFinished",isTimerFinished);
+                    sendBroadcast(intent);
+                }
 
 
             }
@@ -52,9 +59,6 @@ public class BackgroundTimer extends Service {
                 intent.putExtra("isTimerFinished",isTimerFinished);
                 sendBroadcast(intent);
                 // Repeat the timer every time it is done.
-                //isTimerFinished = 0; //set intent back to 0 as timer is over.
-                //intent.putExtra("isTimerFinished",isTimerFinished);
-                //sendBroadcast(intent);
                 countDownTimer.start();
 
             }
