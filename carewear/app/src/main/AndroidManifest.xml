@@ -35,9 +35,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".AccSensorService" />
+        <service android:name=".SensorService" />
         <service android:name=".LocationService"/>
-        <service android:name=".BackgroundTimmer"/>
+        <service android:name=".BackgroundTimer"/>
     </application>
 
 </manifest>

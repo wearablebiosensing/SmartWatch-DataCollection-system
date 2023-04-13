@@ -5,19 +5,18 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 
 import com.example.carewear.databinding.ActivityMainBinding;
 
-import java.security.UnrecoverableEntryException;
 
 public class MainActivity extends Activity {
     String TAG = "MainActivity";
     private TextView txt;
     private ActivityMainBinding binding;
+//    public SharedPreferences isTimerFinished_sharedPreferences ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,11 +25,13 @@ public class MainActivity extends Activity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         txt = binding.text;
-        Intent clockTimer = new Intent(this,BackgroundTimmer.class);
+        // Init Shared Preferences.
+//        isTimerFinished_sharedPreferences = getSharedPreferences("isTimerDone", MODE_PRIVATE);
+        Intent clockTimer = new Intent(this, BackgroundTimer.class);
         startService(clockTimer);
         Log.i(TAG,"clockTimer Service has started Coundown begins.");
 
-        Intent intentSensorActivity = new Intent(this, AccSensorService.class);
+        Intent intentSensorActivity = new Intent(this, SensorService.class);
         startService(intentSensorActivity);
         Log.i(TAG,"intentSensorActivity Service has started");
         //Intent intentLocationService = new Intent(this, LocationService.class);
@@ -42,6 +43,9 @@ public class MainActivity extends Activity {
         @Override
         public void onReceive(Context context, Intent intent) {
             updatedTimer(intent);
+           // int intent_isFinished = intent.getIntExtra("isTimerFinished",0);
+            //System.out.println(TAG+ "Intent from Background Timer Variable: intent_isFinished " + intent_isFinished);
+
         }
 
 
@@ -57,7 +61,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        registerReceiver(broadcastReceiver,new IntentFilter(BackgroundTimmer.COUNTDOWN_BR));
+        registerReceiver(broadcastReceiver,new IntentFilter(BackgroundTimer.COUNTDOWN_BR));
         Log.i(TAG,"Registered Broadcast Reviever");
     }
 

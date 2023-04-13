@@ -1,7 +1,10 @@
 package com.example.carewear;
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -14,14 +17,12 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 
-public class AccSensorService extends Service implements SensorEventListener {
+public class SensorService extends Service implements SensorEventListener {
         String TAG = "AccelerometerService";
         CountDownTimer countDownTimer = null;
         private Sensor mAccelerometer;
-//    public static final   String COUNTDOWN_BR  = "com.example.carewear";
-        // Variables to store data streams from Sensosrs.
-
-//        Intent intent = new  Intent(COUNTDOWN_BR);
+        int intent_isFinished;
+        FileIO fileio = new FileIO();
 
         private String JSONdata;
         SensorManager mSensorManagerAcc;
@@ -46,6 +47,14 @@ public class AccSensorService extends Service implements SensorEventListener {
         mSensorManagerHr  = (SensorManager) getSystemService(SENSOR_SERVICE);
         onResume();
     }
+    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            intent_isFinished = intent.getIntExtra("isTimerFinished",0);
+
+        }
+
+    };
 
 
     @Override
@@ -54,6 +63,10 @@ public class AccSensorService extends Service implements SensorEventListener {
     }
 
     protected void onResume() {
+
+        //  Register broadcast reciever from Background Timer to check if it is over or not.
+                registerReceiver(broadcastReceiver,new IntentFilter(BackgroundTimer.COUNTDOWN_BR));
+                Log.i(TAG,"Registered Broadcast Reviever");
                 // if recording acc data register listener for acc values.
                 Sensor accelerometer = mSensorManagerAcc.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
                 // To change the sampling rate apply it in microseconds.
@@ -66,6 +79,7 @@ public class AccSensorService extends Service implements SensorEventListener {
                 // To change the sampling rate apply it in microseconds.
                 mSensorManagerHr.registerListener((SensorEventListener) this, heart_rate, (1 / 1) * 1000000); // 1 Hz // 1000000 = 1Hz
 
+
         }
 
 
@@ -75,6 +89,8 @@ public class AccSensorService extends Service implements SensorEventListener {
 
         // SensorEvent: This class represents a Sensor event and holds information such as the sensor's type, the time-stamp, accuracy and of course the sensor's data.
         public void onSensorChanged(SensorEvent event) {
+                        System.out.println(TAG + ": Intent from Background Timer Variable: intent_isFinished " + intent_isFinished);
+
                         JSONdata = event.accuracy + "," + event.sensor;
                         // event.timestamp: The time in nanoseconds at which the event happened.
                         // event.values: public final float[]	values
@@ -86,7 +102,16 @@ public class AccSensorService extends Service implements SensorEventListener {
                        // System.out.println("gry_data: " + data_gryo);
                         String data_hr = event.sensor + "," + event.timestamp + "," + "0" + ",0," + String.valueOf(event.values[0]);
                         HRData.add(data_hr);
+                        if(intent_isFinished==1){ // If timer is over then
+                            String selected_value_sr_acc = "30";
+                            // save all three files from the sensors.
+                            fileio.save_data(AccelerometerData, selected_value_sr_acc +"_acc");
+                            fileio.save_data(AccelerometerData, selected_value_sr_acc +"_gry");
+                            fileio.save_data(AccelerometerData, selected_value_sr_acc +"_hr");
+
+                        }
         }
+
 
 
 }

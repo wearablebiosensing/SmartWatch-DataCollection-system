@@ -23,7 +23,7 @@ public class FileIO {
      * Writes the CSV file with the current timestamp in the file name for accelerometer data.
      * Takes in the toggle button view, the data to be added, and filename Eg: acc,gry ...
      * */
-    public void save_data(View view, ArrayList<String> data, String filename){
+    public void save_data( ArrayList<String> data, String filename){
         System.out.println("BUTTON PRESSED : Sensors Button Pressed");
         try{
             File sdCard = Environment.getExternalStorageDirectory();
@@ -65,8 +65,6 @@ public class FileIO {
             e.printStackTrace();
         }
     }
-
-
     public void save_Jsondata(View view, String jsonData, String filename){
         System.out.println("BUTTON PRESSED : Sensors Button Pressed");
         try{

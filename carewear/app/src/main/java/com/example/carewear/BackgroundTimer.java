@@ -1,16 +1,18 @@
 package com.example.carewear;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.CountDownTimer;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
-public class BackgroundTimmer extends Service {
+public class BackgroundTimer extends Service {
     public int isTimerFinished  = 0;
-
-    String TAG = "BackgroundTimmer";
+    String TAG = "BackgroundTimer";
     public static final   String COUNTDOWN_BR  = "com.example.carewear";
 
     CountDownTimer countDownTimer = null;
@@ -38,8 +40,9 @@ public class BackgroundTimmer extends Service {
             public void onFinish() {
                 // Do something.
                 isTimerFinished = 1;
-                Log.i(TAG, "Timmer is finished - " + isTimerFinished);
-
+                Log.i(TAG, "Timer is finished - " + isTimerFinished);
+                intent.putExtra("isTimerFinished",isTimerFinished);
+                sendBroadcast(intent);
             }
         };
         countDownTimer.start();
