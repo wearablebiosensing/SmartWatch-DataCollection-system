@@ -13,9 +13,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 public class FileIO {
     String TAG = "FileIO";
@@ -27,7 +29,9 @@ public class FileIO {
         System.out.println("BUTTON PRESSED : Sensors Button Pressed");
         try{
             File sdCard = Environment.getExternalStorageDirectory();
-            File dir = new File(sdCard.getAbsolutePath() + "/Download");
+            String currentDate = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(new Date());
+
+            File dir = new File(sdCard.getAbsolutePath() + "/Download/" + currentDate);
             System.out.println("DIRECTORY: ---" + dir.toString());
             if(!dir.exists()) { // if directory does not exist then create one.
                 dir.mkdirs();

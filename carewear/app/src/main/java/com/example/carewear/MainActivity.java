@@ -33,8 +33,8 @@ public class MainActivity extends Activity {
         intentSensorActivity = new Intent(this, SensorService.class);
         startService(intentSensorActivity);
         Log.i(TAG,"intentSensorActivity Service has started");
-        //Intent intentLocationService = new Intent(this, LocationService.class);
-        //startService(intentLocationService);
+        Intent intentLocationService = new Intent(this, LocationService.class);
+        startService(intentLocationService);
         Log.i(TAG,"intentLocationService Service has started");
 
     }

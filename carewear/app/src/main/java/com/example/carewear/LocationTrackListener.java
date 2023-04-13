@@ -17,6 +17,8 @@ import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 
+import java.util.ArrayList;
+
 public class LocationTrackListener extends Service implements LocationListener {
 
     private final Context mContext;
