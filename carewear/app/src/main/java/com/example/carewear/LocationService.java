@@ -89,7 +89,6 @@ public class LocationService extends Service{
         }
         else if (intent_isFinished == 0){
             locationThread.start();
-
         }
 
 

@@ -9,6 +9,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -18,7 +19,10 @@ import java.util.ArrayList;
 
 public class SensorService extends Service implements SensorEventListener {
         String TAG = "SensorService";
-        int intent_isFinished =0;
+    public static final   String COUNTDOWN_BR  = "com.example.carewear";
+        Intent intentSensorService = new Intent(COUNTDOWN_BR);
+        public int fileIsWritten = 0;
+        int intent_isFinished;
         FileIO fileio = new FileIO();
         SensorManager mSensorManagerAcc;
         SensorManager mSensorManagerGry;
@@ -42,9 +46,7 @@ public class SensorService extends Service implements SensorEventListener {
         mSensorManagerGry = (SensorManager) getSystemService(SENSOR_SERVICE);
         mSensorManagerHr  = (SensorManager) getSystemService(SENSOR_SERVICE);
         onResume();
-        if (intent_isFinished==1){
-            onDestroy();
-        }
+
     }
     /*
     * Receive Intent from the BackgroundTimer class and set the intent_isFinished to
@@ -64,7 +66,6 @@ public class SensorService extends Service implements SensorEventListener {
     @Override
     public void onDestroy() {
         unregisterReceiver(broadcastReceiver);
-
         super.onDestroy();
     }
 
@@ -127,7 +128,9 @@ public class SensorService extends Service implements SensorEventListener {
                 getHrData(event);
 
             }
+            // Get intent form background Timer and once finished save the files and clear the array data.
             if(intent_isFinished == 1){
+                Log.d(TAG,"Message from backgroung timer that is done one: "+intent_isFinished);
                 Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/.");
                 fileio.save_data( HRData, "1Hz" + "_hr");
                 Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
@@ -136,6 +139,11 @@ public class SensorService extends Service implements SensorEventListener {
                 fileio.save_data( AccelerometerData, "30Hz" + "_acc");
                 // set intent finished back to 0
                 intent_isFinished = 0;
+                // Clear the previous written array.
+                HRData.clear();
+                GryData.clear();
+                AccelerometerData.clear();
+               // fileIsWritten = 1;
             }
         }
 
