@@ -19,6 +19,11 @@ public class MainActivity extends Activity {
     private ActivityMainBinding binding;
     Intent clockTimer;
     Intent intentSensorActivity;
+
+    Intent intentSensorActivityAcc;
+    Intent intentSensorActivityGry;
+    Intent intentSensorActivityHr;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,12 +34,25 @@ public class MainActivity extends Activity {
         clockTimer = new Intent(this, BackgroundTimer.class);
         startService(clockTimer);
         Log.i(TAG,"clockTimer Service has started Coundown begins.");
-
         intentSensorActivity = new Intent(this, SensorService.class);
         startService(intentSensorActivity);
-        Log.i(TAG,"intentSensorActivity Service has started");
-        Intent intentLocationService = new Intent(this, LocationService.class);
-        startService(intentLocationService);
+        Log.i(TAG,"intentSensorActivityAcc Service has started");
+
+//        intentSensorActivityAcc = new Intent(this, AccSensorService.class);
+//        startService(intentSensorActivityAcc);
+//        Log.i(TAG,"intentSensorActivityAcc Service has started");
+
+       // intentSensorActivityGry = new Intent(this, GrySensorService.class);
+       // startService(intentSensorActivityGry);
+       // Log.i(TAG,"intentSensorActivityGry Service has started");
+
+      //  intentSensorActivityHr = new Intent(this, HrSensorService.class);
+        //startService(intentSensorActivityHr);
+      //  Log.i(TAG,"intentSensorActivityHr Service has started");
+
+
+        //Intent intentLocationService = new Intent(this, LocationService.class);
+        //startService(intentLocationService);
         Log.i(TAG,"intentLocationService Service has started");
 
     }
@@ -44,7 +62,6 @@ public class MainActivity extends Activity {
             updatedTimer(intent);
             intent_isFinished = intent.getIntExtra("isTimerFinished",0);
 
-
         }
 
 
@@ -53,7 +70,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        unregisterReceiver(broadcastReceiver);
+ //       unregisterReceiver(broadcastReceiver);
         Log.i(TAG, "unregistered broadcast revciever");
     }
 
@@ -67,7 +84,7 @@ public class MainActivity extends Activity {
     private void  updatedTimer(Intent intent){
         if(intent.getExtras()!=null){
             long milisUntillFinished = intent.getLongExtra("countdown",30000);
-            Log.i(TAG ,"Countdown remaining " +milisUntillFinished);
+            //Log.i(TAG ,"Countdown remaining " +milisUntillFinished);
         }
     }
 }

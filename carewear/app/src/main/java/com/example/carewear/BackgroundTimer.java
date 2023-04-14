@@ -32,32 +32,37 @@ public class BackgroundTimer extends Service {
             public void onTick(long l) {
                 isTimerFinished = 0;
                 intent.putExtra("isTimerFinished",isTimerFinished);
-                Log.i(TAG,"Countdown millis remaining: " + l);
                 // Sennd broadcast to MainActivity
                 intent.putExtra("countdown",l/1000);
-                Log.i(TAG,"Countdown millis remaining: " + l/1000);
+                Log.i(TAG,"Countdown seconds remaining: " + l/1000);
                 if(l/1000==0){
                     isTimerFinished=1;
+                    Log.i(TAG, "onTick(): Timer is finished - " + isTimerFinished);
+
                     intent.putExtra("isTimerFinished",isTimerFinished);
                     sendBroadcast(intent);
                 }
-                else{
+                else if(l/1000<30){
                     isTimerFinished=0;
                     intent.putExtra("isTimerFinished",isTimerFinished);
                     sendBroadcast(intent);
                 }
+                sendBroadcast(intent);
 
 
             }
 
             @Override
             public void onFinish() {
-                // set boolean variable isTimerFinished to 1 i.e timer is finished
-                isTimerFinished = 1;
-                Log.i(TAG, "Timer is finished - " + isTimerFinished);
-                // Broadcast the Intent to the SensorsService Class that the timer is done.
-                intent.putExtra("isTimerFinished",isTimerFinished);
+                isTimerFinished=0;
                 sendBroadcast(intent);
+
+                // set boolean variable isTimerFinished to 1 i.e timer is finished
+//                isTimerFinished = 1;
+//                Log.i(TAG, "Timer is finished - " + isTimerFinished);
+//                // Broadcast the Intent to the SensorsService Class that the timer is done.
+//                intent.putExtra("isTimerFinished",isTimerFinished);
+//                sendBroadcast(intent);
                 // Repeat the timer every time it is done.
                 countDownTimer.start();
 
@@ -72,8 +77,6 @@ public class BackgroundTimer extends Service {
 
     @Override
     public void onDestroy() {
-        //  Don't cancel the timer re set the timer back to start.
-//        countDownTimer.cancel();
         super.onDestroy();
     }
 }

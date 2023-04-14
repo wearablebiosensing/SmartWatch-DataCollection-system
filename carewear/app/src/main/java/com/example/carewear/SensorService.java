@@ -90,36 +90,55 @@ public class SensorService extends Service implements SensorEventListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
         }
+    public void getAccelerometerData(SensorEvent event ){
+        // System.out.println(TAG + ": Intent from Background Timer Variable: intent_isFinished " + intent_isFinished);
+        // event.timestamp: The time in nanoseconds at which the event happened.
+        // event.values: public final float[]	values
+        String data_accelerometer = event.timestamp + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
+        //System.out.println("data_accelerometer: " + data_accelerometer);
+        AccelerometerData.add(data_accelerometer);
+
+    }
+    public void getGryData(SensorEvent event ){
+        String data_gryo =  "," + event.timestamp + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1]) + "," + String.valueOf(event.values[2]);
+        GryData.add(data_gryo);
+
+
+        }
+    public void getHrData(SensorEvent event){
+        // System.out.println("gry_data: " + data_gryo);
+        String data_hr = event.timestamp + "," + "-1" + ",-1," + String.valueOf(event.values[0]);
+        HRData.add(data_hr);
+
+    }
+
 
         // SensorEvent: This class represents a Sensor event and holds information such as the sensor's type, the time-stamp, accuracy and of course the sensor's data.@Override
         @Override
     public void onSensorChanged(SensorEvent event) {
-//                System.out.println(TAG + ": Intent from Background Timer Variable: intent_isFinished " + intent_isFinished);
-                // event.timestamp: The time in nanoseconds at which the event happened.
-                // event.values: public final float[]	values
-                String data_accelerometer = event.timestamp + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
-                //System.out.println("data_accelerometer: " + data_accelerometer);
-                AccelerometerData.add(data_accelerometer);
-                String data_gryo =  "," + event.timestamp + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1]) + "," + String.valueOf(event.values[2]);
-                GryData.add(data_gryo);
-                // System.out.println("gry_data: " + data_gryo);
-                String data_hr = event.timestamp + "," + "-1" + ",-1," + String.valueOf(event.values[0]);
-                HRData.add(data_hr);
-            //Log.d(TAG,"onSensorChanged(): intent_isFinished - "+intent_isFinished);
+        Log.i(TAG,"onSensorChanged() broadcasted from timer intent_isFinished : " + intent_isFinished);
+            if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                getAccelerometerData(event);
+            }
+            else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
+                getGryData(event);
+            }
+            else if (event.sensor.getType() == Sensor.TYPE_HEART_RATE) {
+                getHrData(event);
 
+            }
             if(intent_isFinished == 1){
-                    Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS acc/.");
-                  fileio.save_data( AccelerometerData, "30Hz" + "_acc");
-                    Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
-                   fileio.save_data( GryData, "30Hz" + "_gry");
-                    Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/.");
-                    fileio.save_data( HRData, "1Hz" + "_hr");
-                    // set intent finished back to 0
-                   intent_isFinished = 0;
-                }
-
-
+                Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/.");
+                fileio.save_data( HRData, "1Hz" + "_hr");
+                Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
+                fileio.save_data( GryData, "30Hz" + "_gry");
+                Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS acc/.");
+                fileio.save_data( AccelerometerData, "30Hz" + "_acc");
+                // set intent finished back to 0
+                intent_isFinished = 0;
+            }
         }
+
 
 
 
