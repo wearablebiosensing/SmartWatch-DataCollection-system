@@ -83,7 +83,7 @@ public class MainActivity extends Activity {
 
     private void  updatedTimer(Intent intent){
         if(intent.getExtras()!=null){
-            long milisUntillFinished = intent.getLongExtra("countdown",30000);
+            long milisUntillFinished = intent.getLongExtra("countdown",300000);
             //Log.i(TAG ,"Countdown remaining " +milisUntillFinished);
         }
     }

@@ -27,7 +27,7 @@ public class BackgroundTimer extends Service {
 
     @Override
     public void onCreate() {
-        countDownTimer = new CountDownTimer(30000,1000) {
+        countDownTimer = new CountDownTimer(300000,1000) {
             @Override
             public void onTick(long l) {
                 isTimerFinished = 0;

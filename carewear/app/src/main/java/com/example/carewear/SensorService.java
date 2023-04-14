@@ -116,7 +116,7 @@ public class SensorService extends Service implements SensorEventListener {
         // SensorEvent: This class represents a Sensor event and holds information such as the sensor's type, the time-stamp, accuracy and of course the sensor's data.@Override
         @Override
     public void onSensorChanged(SensorEvent event) {
-        Log.i(TAG,"onSensorChanged() broadcasted from timer intent_isFinished : " + intent_isFinished);
+        //Log.i(TAG,"onSensorChanged() broadcasted from timer intent_isFinished : " + intent_isFinished);
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
                 getAccelerometerData(event);
             }
