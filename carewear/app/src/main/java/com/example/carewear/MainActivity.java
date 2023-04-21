@@ -71,7 +71,7 @@ public class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
  //       unregisterReceiver(broadcastReceiver);
-        Log.i(TAG, "unregistered broadcast revciever");
+       // Log.i(TAG, "unregistered broadcast revciever");
     }
 
     @Override
@@ -83,7 +83,7 @@ public class MainActivity extends Activity {
 
     private void  updatedTimer(Intent intent){
         if(intent.getExtras()!=null){
-            long milisUntillFinished = intent.getLongExtra("countdown",60000);
+            long milisUntillFinished = intent.getLongExtra("countdown",300000);
             //Log.i(TAG ,"Countdown remaining " +milisUntillFinished);
         }
     }

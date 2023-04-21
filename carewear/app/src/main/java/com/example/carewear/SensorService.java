@@ -65,7 +65,7 @@ public class SensorService extends Service implements SensorEventListener {
 
     @Override
     public void onDestroy() {
-        unregisterReceiver(broadcastReceiver);
+//        unregisterReceiver(broadcastReceiver);
         super.onDestroy();
     }
 
@@ -73,6 +73,7 @@ public class SensorService extends Service implements SensorEventListener {
             //  Register broadcast receiver from Background Timer to check if it is over or not.
             registerReceiver(broadcastReceiver,new IntentFilter(BackgroundTimer.COUNTDOWN_BR));
             Log.i(TAG,"Registered Broadcast Receiver");
+
             // if recording acc data register listener for acc values.
             Sensor accelerometer = mSensorManagerAcc.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             // To change the sampling rate apply it in microseconds.
@@ -117,7 +118,8 @@ public class SensorService extends Service implements SensorEventListener {
         // SensorEvent: This class represents a Sensor event and holds information such as the sensor's type, the time-stamp, accuracy and of course the sensor's data.@Override
         @Override
     public void onSensorChanged(SensorEvent event) {
-        //Log.i(TAG,"onSensorChanged() broadcasted from timer intent_isFinished : " + intent_isFinished);
+
+            //Log.i(TAG,"onSensorChanged() broadcasted from timer intent_isFinished : " + intent_isFinished);
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
                 getAccelerometerData(event);
             }
@@ -128,6 +130,8 @@ public class SensorService extends Service implements SensorEventListener {
                 getHrData(event);
 
             }
+            Log.i(TAG,"intent_isFinished: Registered Broadcast Receiver: " +intent_isFinished);
+
             // Get intent form background Timer and once finished save the files and clear the array data.
             if(intent_isFinished == 1){
                 Log.d(TAG,"Message from backgroung timer that is done one: "+intent_isFinished);
