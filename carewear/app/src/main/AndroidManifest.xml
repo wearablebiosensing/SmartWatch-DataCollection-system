@@ -49,7 +49,8 @@
 <!--            </intent-filter>-->
 <!--        </receiver>-->
         <service android:name=".SensorService"
-            android:exported="true">
+            android:exported="true"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
@@ -57,7 +58,14 @@
             </intent-filter>
         </service>
         <service android:name=".LocationService"/>
-        <service android:name=".BackgroundTimer"/>
+        <service android:name=".BackgroundTimer"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

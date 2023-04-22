@@ -1,10 +1,10 @@
 package com.example.carewear;
 
 import android.annotation.SuppressLint;
-import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -14,15 +14,12 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
-import android.view.WindowManager;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
-import androidx.legacy.content.WakefulBroadcastReceiver;
 
 import java.util.ArrayList;
 
@@ -77,39 +74,37 @@ public class SensorService extends Service implements SensorEventListener {
 
    @Override
    public int onStartCommand(final Intent intent, int flags, int startId) {
+       final String CHANNELID = "Foreground Service ID";
+       NotificationChannel channel = new NotificationChannel(
+               CHANNELID,
+               CHANNELID,
+               NotificationManager.IMPORTANCE_LOW
+       );
+
+       getSystemService(NotificationManager.class).createNotificationChannel(channel);
+       Notification.Builder notification = new Notification.Builder(this, CHANNELID)
+               .setContentText("Service is running")
+               .setContentTitle("Service enabled")
+               .setSmallIcon(R.drawable.ic_launcher_background);
+
+       startForeground(1001, notification.build());
+
        registerReceiver(broadcastReceiver,new IntentFilter(BackgroundTimer.COUNTDOWN_BR));
        onResume();
-       final String CHANNEL_ID = "ForegroundSensorsService";
-       Notification notification = new NotificationCompat.Builder(
-               this, "ForegroundSensorsService")
-               .setContentTitle("Foreground Sensors Service")
-               .setContentText("Sensor Service Running")
-               .setSmallIcon(R.mipmap.ic_launcher)
-              .build();
-       /* NotificationChannel channel = new NotificationChannel(CHANNEL_ID,CHANNEL_ID, NotificationManager.IMPORTANCE_LOW);
-        getSystemService(NotificationManager.class).createNotificationChannel(channel);
-      Notification.Builder notification = new Notification.Builder(this)
-               .setContentText("Sensor Service is running..")
-               .setContentTitle("Service Enabled")
-               .setSmallIcon(R.drawable.ic_launcher_background); */
-
-       startForeground(1,notification);
 
 
        return super.onStartCommand(intent,flags,startId);
    }
-   /*@Override
-    public void onDestroy() {
-            Log.d(TAG,"UNRegistered Broadcast Receiver");
-            if(isOnDestroy == 1){
-                unregisterReceiver(broadcastReceiver);
+    private void createNotificationChannel() {
+        NotificationChannel notificationChannel = new NotificationChannel(
+                "ChannelID",
+                "NotificationChannel",
+                NotificationManager.IMPORTANCE_HIGH
+        );
 
-            }
-
-       //registerReceiver(broadcastReceiver,new IntentFilter(BackgroundTimer.COUNTDOWN_BR));
-
-        super.onDestroy();
-    }*/
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        manager.createNotificationChannel(notificationChannel);
+    }
 
     @Nullable
     @Override
@@ -168,7 +163,7 @@ public class SensorService extends Service implements SensorEventListener {
         // SensorEvent: This class represents a Sensor event and holds information such as the sensor's type, the time-stamp, accuracy and of course the sensor's data.@Override
         @Override
     public void onSensorChanged(SensorEvent event) {
-            Log.i(TAG,"intent_isFinished: Intent recieved - : " +intent_isFinished);
+           // Log.i(TAG,"intent_isFinished: Intent recieved - : " +intent_isFinished);
 
            // Log.i(TAG,"onSensorChanged() broadcasted from timer intent_isFinished : " + intent_isFinished);
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {

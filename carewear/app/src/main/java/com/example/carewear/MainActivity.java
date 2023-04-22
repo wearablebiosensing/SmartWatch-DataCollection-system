@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
@@ -28,17 +29,21 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        Log.d(TAG, "Build Version -------- " + String.valueOf(Build.VERSION.SDK_INT));
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         txt = binding.text;
         clockTimer = new Intent(this, BackgroundTimer.class);
-        startService(clockTimer);
-        Log.i(TAG,"clockTimer Service has started countdown begins.");
-        if(!foregroundServiceRunning()){
+        Context context = getApplicationContext();
+        if(!foregroundServiceRunning()) {
+            startForegroundService(clockTimer);
+
+            Log.i(TAG,"clockTimer Service has started countdown begins.");
             intentSensorActivity = new Intent(this, SensorService.class);
             startForegroundService(intentSensorActivity);
+
         }
+
 
         Log.i(TAG,"intentSensorActivityAcc Service has started");
         //Intent intentLocationService = new Intent(this, LocationService.class);
@@ -49,10 +54,13 @@ public class MainActivity extends Activity {
     public boolean foregroundServiceRunning(){
         ActivityManager activityManager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
         for(ActivityManager.RunningServiceInfo service: activityManager.getRunningServices(Integer.MAX_VALUE)){
-                if(SensorService.class.getName().equals(service.service.getClassName())){
-                    return true;
+                if(SensorService.class.getName().equals(service.service.getClassName()) &&
+                        BackgroundTimer.class.getName().equals(service.service.getClassName())
 
+                ){
+                    return true;
                 }
+
         }
         return false;
     }
