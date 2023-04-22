@@ -17,7 +17,7 @@ public class BackgroundTimer extends Service {
     public static final   String COUNTDOWN_BR  = "com.example.carewear";
 
     CountDownTimer countDownTimer = null;
-    int countdownSeconds = 30;
+    int countdownSeconds = 300;
     Intent intent = new Intent(COUNTDOWN_BR);
     public int fileIsWritten;
 
@@ -37,9 +37,10 @@ public class BackgroundTimer extends Service {
                 // Sennd broadcast to MainActivity
                 intent.putExtra("countdown",l/1000);
               //  Log.i(TAG, "Intent from Sensor Activity fileIsWritten: "+ fileIsWritten);
-                Log.i(TAG,"Countdown miliseconds remaining: " + l);
+               // Log.i(TAG,"Countdown miliseconds remaining: " + l);
                 Log.i(TAG,"Countdown seconds remaining: " + l/1000);
                 sendBroadcast(intent);
+                Log.i(TAG,"onTick(): Background Timer isTimerFinished: " + isTimerFinished);
 
                 if(l/1000==0){
                     isTimerFinished=1;// is timer finished? 1 - true.
@@ -47,6 +48,7 @@ public class BackgroundTimer extends Service {
 
                     intent.putExtra("isTimerFinished",isTimerFinished);
                     sendBroadcast(intent);
+
                 }
                 else if(l/1000<countdownSeconds){
 

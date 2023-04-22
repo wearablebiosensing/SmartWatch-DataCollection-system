@@ -1,6 +1,7 @@
 package com.example.carewear;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -33,28 +34,27 @@ public class MainActivity extends Activity {
         txt = binding.text;
         clockTimer = new Intent(this, BackgroundTimer.class);
         startService(clockTimer);
-        Log.i(TAG,"clockTimer Service has started Coundown begins.");
-        intentSensorActivity = new Intent(this, SensorService.class);
-        startService(intentSensorActivity);
+        Log.i(TAG,"clockTimer Service has started countdown begins.");
+        if(!foregroundServiceRunning()){
+            intentSensorActivity = new Intent(this, SensorService.class);
+            startForegroundService(intentSensorActivity);
+        }
+
         Log.i(TAG,"intentSensorActivityAcc Service has started");
-
-//        intentSensorActivityAcc = new Intent(this, AccSensorService.class);
-//        startService(intentSensorActivityAcc);
-//        Log.i(TAG,"intentSensorActivityAcc Service has started");
-
-       // intentSensorActivityGry = new Intent(this, GrySensorService.class);
-       // startService(intentSensorActivityGry);
-       // Log.i(TAG,"intentSensorActivityGry Service has started");
-
-      //  intentSensorActivityHr = new Intent(this, HrSensorService.class);
-        //startService(intentSensorActivityHr);
-      //  Log.i(TAG,"intentSensorActivityHr Service has started");
-
-
         //Intent intentLocationService = new Intent(this, LocationService.class);
         //startService(intentLocationService);
         Log.i(TAG,"intentLocationService Service has started");
 
+    }
+    public boolean foregroundServiceRunning(){
+        ActivityManager activityManager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
+        for(ActivityManager.RunningServiceInfo service: activityManager.getRunningServices(Integer.MAX_VALUE)){
+                if(SensorService.class.getName().equals(service.service.getClassName())){
+                    return true;
+
+                }
+        }
+        return false;
     }
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
@@ -70,8 +70,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
- //       unregisterReceiver(broadcastReceiver);
-       // Log.i(TAG, "unregistered broadcast revciever");
     }
 
     @Override
@@ -79,12 +77,13 @@ public class MainActivity extends Activity {
         super.onResume();
         registerReceiver(broadcastReceiver,new IntentFilter(BackgroundTimer.COUNTDOWN_BR));
         Log.i(TAG,"Registered Broadcast Reviever");
+
     }
 
     private void  updatedTimer(Intent intent){
         if(intent.getExtras()!=null){
             long milisUntillFinished = intent.getLongExtra("countdown",300000);
-            //Log.i(TAG ,"Countdown remaining " +milisUntillFinished);
+            Log.i(TAG ,"Countdown remaining:  " +milisUntillFinished);
         }
     }
 }
