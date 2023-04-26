@@ -13,11 +13,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermission;
+import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 public class FileIO {
     String TAG = "FileIO";
@@ -26,7 +31,8 @@ public class FileIO {
      * Takes in the toggle button view, the data to be added, and filename Eg: acc,gry ...
      * */
     public void save_data( ArrayList<String> data, String filename){
-        System.out.println("BUTTON PRESSED : Sensors Button Pressed");
+        Log.d(TAG, "DAA FROM FILE IO - save_data() "+data);
+        //System.out.println("BUTTON PRESSED : Sensors Button Pressed");
         try{
             File sdCard = Environment.getExternalStorageDirectory();
             String currentDate = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(new Date());
@@ -36,7 +42,6 @@ public class FileIO {
             if(!dir.exists()) { // if directory does not exist then create one.
                 dir.mkdirs();
             }
-            Date currentTime = Calendar.getInstance().getTime();
             long time= System.currentTimeMillis();
             System.out.println("DATE AND TIME CURRENT: ---" + time);
             // Depending on the user selection enter the.
@@ -45,27 +50,46 @@ public class FileIO {
                 file.createNewFile();
             }
             FileOutputStream f = new FileOutputStream(file);
-            OutputStreamWriter osw = new OutputStreamWriter(f, StandardCharsets.UTF_8);
+            OutputStreamWriter osw = new OutputStreamWriter(f);
+//            BufferedWriter writer = new BufferedWriter(osw);
             // Buffer is needed to create the UTF 8 formatting and
-            BufferedWriter writer = new BufferedWriter(osw);
             String mHeader ="Timestamp," + "x," + "y," + "z";
-            writer.append(mHeader);
-            writer.newLine();
+            Set<PosixFilePermission> perms = new HashSet<>();
+            perms.add(PosixFilePermission.OWNER_READ);
+            perms.add(PosixFilePermission.OWNER_WRITE);
+            Files.setPosixFilePermissions(file.toPath(), perms);
+            //writer.append(mHeader);
+           // writer.newLine();
             try {
                 for (int i = 0 ; i <data.size() ; i++){
-                    writer.append(data.get(i));
-                    writer.newLine();
+                    Log.d(TAG, "data.get(i): "+ data.get(i));
+//                    if(filename.contains("hr"))
+//                    {
+//                        writer.append(">");
+//                    Thread.sleep(10);
+//                    }
+                    osw.write(data.get(i));
+                    osw.write("\n");
+
+                    //writer.write(data.get(i));
+
                 }
-                f.flush();
-                f.close();
+                //f.flush();
+                osw.close();
+               f.close();
                 Log.i(TAG, "Data saved");
 //                Toast.makeText(getBaseContext(), filename + " Data saved", Toast.LENGTH_LONG).show();
             } catch (IOException e) {
                 e.printStackTrace();
+                Log.d(TAG,"IO Exception");
             }
         } catch (FileNotFoundException e) {
+            Log.d(TAG,"FILE NOT FOUND Exception");
+
             e.printStackTrace();
         } catch (IOException e) {
+            Log.d(TAG,"IO Exception Exception");
+
             e.printStackTrace();
         }
     }

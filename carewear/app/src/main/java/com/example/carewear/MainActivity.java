@@ -1,11 +1,13 @@
 package com.example.carewear;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -49,8 +51,31 @@ public class MainActivity extends Activity {
         //Intent intentLocationService = new Intent(this, LocationService.class);
         //startService(intentLocationService);
         Log.i(TAG,"intentLocationService Service has started");
+        if (checkSelfPermission(Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions( new String[]{Manifest.permission.BODY_SENSORS}, 1);
 
-    }
+        }
+       /* if(checkSelfPermission(Manifest.permission.HIGH_SAMPLING_RATE_SENSORS) != PackageManager.PERMISSION_GRANTED)){
+            requestPermissions( new String[]{Manifest.permission.HIGH_SAMPLING_RATE_SENSORS}, 1);
+
+        }*/
+        if(checkSelfPermission(Manifest.permission.BODY_SENSORS_BACKGROUND) != PackageManager.PERMISSION_GRANTED ){
+            requestPermissions( new String[]{Manifest.permission.BODY_SENSORS_BACKGROUND}, 1);
+
+        }
+        if(checkSelfPermission(Manifest.permission.WAKE_LOCK) != PackageManager.PERMISSION_GRANTED ) {
+            requestPermissions( new String[]{Manifest.permission.WAKE_LOCK}, 1);
+
+        }
+        if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ) {
+            requestPermissions( new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+
+        }
+
+
+
+
+        }
     public boolean foregroundServiceRunning(){
         ActivityManager activityManager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
         for(ActivityManager.RunningServiceInfo service: activityManager.getRunningServices(Integer.MAX_VALUE)){
