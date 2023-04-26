@@ -90,8 +90,6 @@ public class LocationTrackListener extends Service implements LocationListener {
                             longitude = loc.getLongitude();
                         }
                     }
-
-
                 }
 
 

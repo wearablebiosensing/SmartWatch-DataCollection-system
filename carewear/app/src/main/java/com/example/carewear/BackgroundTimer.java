@@ -22,7 +22,7 @@ public class BackgroundTimer extends Service {
     public static final   String COUNTDOWN_BR  = "com.example.carewear";
 
     CountDownTimer countDownTimer = null;
-    int countdownSeconds = 30;
+    int countdownSeconds = 300;
     Intent intent = new Intent(COUNTDOWN_BR);
     public int fileIsWritten;
 

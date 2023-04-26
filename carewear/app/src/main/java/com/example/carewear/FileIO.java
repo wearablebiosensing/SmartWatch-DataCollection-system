@@ -62,7 +62,7 @@ public class FileIO {
            // writer.newLine();
             try {
                 for (int i = 0 ; i <data.size() ; i++){
-                    Log.d(TAG, "data.get(i): "+ data.get(i));
+                   // Log.d(TAG, "data.get(i): "+ data.get(i));
 //                    if(filename.contains("hr"))
 //                    {
 //                        writer.append(">");
