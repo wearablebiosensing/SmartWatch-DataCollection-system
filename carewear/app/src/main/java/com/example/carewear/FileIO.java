@@ -54,12 +54,21 @@ public class FileIO {
 //            BufferedWriter writer = new BufferedWriter(osw);
             // Buffer is needed to create the UTF 8 formatting and
             String mHeader ="Timestamp," + "x," + "y," + "z";
+            String mHeaderHr ="Timestamp," + "HR_BPM";
+
             Set<PosixFilePermission> perms = new HashSet<>();
             perms.add(PosixFilePermission.OWNER_READ);
             perms.add(PosixFilePermission.OWNER_WRITE);
             Files.setPosixFilePermissions(file.toPath(), perms);
-            //writer.append(mHeader);
-           // writer.newLine();
+            if(filename.contains("hr")) {
+                osw.append(mHeaderHr);
+                osw.write("\n");
+            }
+            else{
+                osw.append(mHeader);
+                osw.write("\n");
+            }
+
             try {
                 for (int i = 0 ; i <data.size() ; i++){
                    // Log.d(TAG, "data.get(i): "+ data.get(i));

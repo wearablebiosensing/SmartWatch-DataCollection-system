@@ -32,6 +32,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
@@ -48,7 +50,8 @@ public class SensorService extends Service implements SensorEventListener {
         ArrayList<String> AccelerometerData = new ArrayList<String>();
         ArrayList<String> GryData = new ArrayList<String>();
         ArrayList<String> HRData = new ArrayList<String>();
-
+        ArrayList<String> BatteryInfo = new ArrayList<String>();
+        int level;
 
 
 
@@ -62,6 +65,7 @@ public class SensorService extends Service implements SensorEventListener {
         Log.d(TAG,"onCreate() mSensorManagerAcc:----  "+mSensorManagerAcc);
         Log.d(TAG,"onCreate() mSensorManagerGry:----  "+mSensorManagerGry);
         Log.d(TAG,"onCreate()  mSensorManagerHr:---- "+mSensorManagerHr);
+
     }
 
     /*
@@ -75,7 +79,20 @@ public class SensorService extends Service implements SensorEventListener {
             //startWakefulService(context, SensorService.class);
         }
     };
-
+    private BroadcastReceiver mBatInfoReceiver = new BroadcastReceiver(){
+        @Override
+        public void onReceive(Context arg0, Intent intent) {
+            // TODO Auto-generated method stub
+            level = intent.getIntExtra("level", 0);
+            Log.d(TAG,"mBatInfoReceiver BATTERY LEVEL INFO ------------------- "+ String.valueOf(level) + "%");
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+            LocalDateTime now = LocalDateTime.now();
+            System.out.println(dtf.format(now));
+            String batteryinfo= dtf.format(now) + ","+ String.valueOf(level);
+            BatteryInfo.add(batteryinfo);
+            //contentTxt.setText(String.valueOf(level) + "%");
+        }
+    };
 
 
    @Override
@@ -96,6 +113,8 @@ public class SensorService extends Service implements SensorEventListener {
        startForeground(1001, notification.build());
 
        registerReceiver(broadcastReceiver,new IntentFilter(BackgroundTimer.COUNTDOWN_BR));
+       registerReceiver(mBatInfoReceiver,
+               new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
        onResume();
 
 
@@ -110,7 +129,8 @@ public class SensorService extends Service implements SensorEventListener {
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     protected void onResume() {
-       //super.onResume();
+
+        //super.onResume();
 
         //  Register broadcast receiver from Background Timer to check if it is over or not.
             //Log.i(TAG,"Registered Broadcast Receiver");
@@ -158,7 +178,7 @@ public class SensorService extends Service implements SensorEventListener {
         GryData.add(data_gryo);
     }
     public void getHrData(SensorEvent event){
-        String data_hr =   event.timestamp + "," + String.valueOf(event.values[0]) + "," + "-" + "," + "-";
+        String data_hr =   event.timestamp + "," + String.valueOf(event.values[0]);
 
        //String data_hr = event.timestamp + "," + String.valueOf(event.values[0]); //event.timestamp + "," + String.valueOf(event.values[0]); //format("%d,%s", event.timestamp, event.values[0]);
         Log.d(TAG,"hr_data: "+data_hr); // 402550836440 , 401550836440
@@ -198,25 +218,14 @@ public class SensorService extends Service implements SensorEventListener {
                 //Log.d(TAG,"Message from backgroung timer that is done one: "+intent_isFinished);
                 //Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/.");
                 //Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
+//                BatteryInfo.add(batteryinfo);
+                Log.d(TAG,"onSensorChanged(): bBATTERY INFO" +BatteryInfo);
+                fileio.save_data( BatteryInfo, "onchange" + "_battery");
+
                 fileio.save_data( GryData, "30Hz" + "_gry");
                // Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
                 Log.d(TAG,"onSensorChanged() ACC DATA --" +AccelerometerData);
                 fileio.save_data( AccelerometerData, "30Hz" + "_acc");
-               // Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS acc/.");
-//                ArrayList<String> random = new ArrayList<String>();
-//                random.add("1");
-//                random.add("2");
-//                random.add("3");
-//                random.add("4");
-//
-//                random = ["2","21","21"];
-                //HRData.clear();
-//                HRData.add(HRData.toString());
-//                HRData.add(HRData.toString());
-//                HRData.add(HRData.toString());
-//                HRData.add(HRData.toString());
-//                HRData.add(HRData.toString());
-                //HRData.add(HRData.toString());
                 Log.d(TAG,"onSensorChanges() HRData: "+HRData);
 
                 fileio.save_data( HRData, "1Hz" + "_hr");

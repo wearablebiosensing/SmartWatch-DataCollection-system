@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.BODY_SENSORS"/>
     <uses-permission android:name="android.permission.BODY_SENSORS_BACKGROUND"/>
 <!--    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"/>-->
-
+    <uses-permission android:name="ACTION_BATTERY_CHANGED"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
