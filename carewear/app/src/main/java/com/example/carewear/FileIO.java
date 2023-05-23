@@ -30,7 +30,7 @@ public class FileIO {
      * Writes the CSV file with the current timestamp in the file name for accelerometer data.
      * Takes in the toggle button view, the data to be added, and filename Eg: acc,gry ...
      * */
-    public void save_data( ArrayList<String> data, String filename){
+    public void save_data(ArrayList<String> data, String filename){
         Log.d(TAG, "DAA FROM FILE IO - save_data() "+data);
         //System.out.println("BUTTON PRESSED : Sensors Button Pressed");
         try{

@@ -1,9 +1,4 @@
 package com.example.carewear;
-
-import static java.lang.String.format;
-import static java.lang.String.valueOf;
-
-import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -19,24 +14,14 @@ import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
-import android.os.PowerManager;
+import android.os.StatFs;
 import android.util.Log;
-
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
+
 
 public class SensorService extends Service implements SensorEventListener {
         String TAG = "SensorService";
@@ -65,6 +50,19 @@ public class SensorService extends Service implements SensorEventListener {
         Log.d(TAG,"onCreate() mSensorManagerAcc:----  "+mSensorManagerAcc);
         Log.d(TAG,"onCreate() mSensorManagerGry:----  "+mSensorManagerGry);
         Log.d(TAG,"onCreate()  mSensorManagerHr:---- "+mSensorManagerHr);
+//        File sdCard = Environment.getExternalStorageDirectory();
+            /*Gets the SD CARD STORAGE AAVALIABLE Approx 7GB */
+        StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
+        long bytesAvailable;
+        if (android.os.Build.VERSION.SDK_INT >=
+                android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            bytesAvailable = stat.getBlockSizeLong() * stat.getAvailableBlocksLong();
+        }
+        else {
+            bytesAvailable = (long)stat.getBlockSize() * (long)stat.getAvailableBlocks();
+        }
+        long megAvailable = bytesAvailable / (1024 * 1024*1024);
+        Log.e(TAG,"STORAGE INFO - Available GB : "+megAvailable);
 
     }
 
@@ -93,7 +91,6 @@ public class SensorService extends Service implements SensorEventListener {
             //contentTxt.setText(String.valueOf(level) + "%");
         }
     };
-
 
    @Override
    public int onStartCommand(final Intent intent, int flags, int startId) {
@@ -153,12 +150,13 @@ public class SensorService extends Service implements SensorEventListener {
             //Log.d(TAG,"HEART RATE SENSOR ----------: "+heart_rate);
 
         // To change the sampling rate apply it in microseconds.
-            mSensorManagerHr.registerListener((SensorEventListener) this, mHeartRate, (1 / 30) * 1000000); // 1 Hz // 1000000 = 1Hz
+            mSensorManagerHr.registerListener((SensorEventListener) this, mHeartRate, (1 / 1) * 1000000); // 1 Hz // 1000000 = 1Hz
             Log.d(TAG,"HEART RATE SENSOR mSensorManagerHr ----------: "+mSensorManagerHr);
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
     }
 
     public void getAccelerometerData(SensorEvent event ){
@@ -232,6 +230,7 @@ public class SensorService extends Service implements SensorEventListener {
                 //Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/." +HRData);
 
                 // Clear the previous written array.
+                BatteryInfo.clear();
                 GryData.clear();
                 AccelerometerData.clear();
                 HRData.clear();
