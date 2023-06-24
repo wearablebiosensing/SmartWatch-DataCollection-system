@@ -37,9 +37,6 @@ public class SensorService extends Service implements SensorEventListener {
         ArrayList<String> HRData = new ArrayList<String>();
         ArrayList<String> BatteryInfo = new ArrayList<String>();
         int level;
-
-
-
     @Override
     public void onCreate() {
         super.onCreate();
@@ -239,7 +236,4 @@ public class SensorService extends Service implements SensorEventListener {
 
             }
         }
-
-
-
 }
