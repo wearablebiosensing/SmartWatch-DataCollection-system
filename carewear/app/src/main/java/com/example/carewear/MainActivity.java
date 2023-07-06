@@ -18,6 +18,10 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.carewear.databinding.ActivityMainBinding;
+import com.google.firebase.FirebaseApp;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 
 public class MainActivity extends Activity {
@@ -36,6 +40,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+//        FirebaseApp.initializeApp(this);
+
         Log.d(TAG, "Build Version -------- " + String.valueOf(Build.VERSION.SDK_INT));
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -48,7 +54,6 @@ public class MainActivity extends Activity {
             Log.i(TAG,"clockTimer Service has started countdown begins.");
             intentSensorActivity = new Intent(this, SensorService.class);
             startForegroundService(intentSensorActivity);
-
         }
 
 
@@ -57,24 +62,6 @@ public class MainActivity extends Activity {
         //startService(intentLocationService);
         Log.i(TAG,"intentLocationService Service has started");
         requestPermissions();
-        /*if (checkSelfPermission(Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions( new String[]{Manifest.permission.BODY_SENSORS}, 1);
-
-        }
-
-        else if(checkSelfPermission(Manifest.permission.BODY_SENSORS_BACKGROUND) != PackageManager.PERMISSION_GRANTED ){
-            requestPermissions( new String[]{Manifest.permission.BODY_SENSORS_BACKGROUND}, 1);
-
-        }
-        else if(checkSelfPermission(Manifest.permission.WAKE_LOCK) != PackageManager.PERMISSION_GRANTED ) {
-            requestPermissions( new String[]{Manifest.permission.WAKE_LOCK}, 1);
-
-        }
-        else if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ) {
-            requestPermissions( new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-
-        } */
-
 
 
 
@@ -89,8 +76,11 @@ public class MainActivity extends Activity {
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.WAKE_LOCK,
                 Manifest.permission.RECEIVE_BOOT_COMPLETED,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.ACCESS_WIFI_STATE,
+                Manifest.permission.CHANGE_WIFI_STATE,
+                Manifest.permission.ACCESS_NETWORK_STATE,
+                Manifest.permission.CHANGE_NETWORK_STATE,
         };
 
         // Check if the permissions are already granted

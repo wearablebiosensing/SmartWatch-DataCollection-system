@@ -11,16 +11,36 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.StatFs;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.TimeZone;
 
 
 public class SensorService extends Service implements SensorEventListener {
@@ -36,10 +56,22 @@ public class SensorService extends Service implements SensorEventListener {
         ArrayList<String> GryData = new ArrayList<String>();
         ArrayList<String> HRData = new ArrayList<String>();
         ArrayList<String> BatteryInfo = new ArrayList<String>();
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        private DatabaseReference databaseReference;
         int level;
+        private StorageReference storageRef;
+
     @Override
     public void onCreate() {
         super.onCreate();
+
+
+        // Set up Firebase
+        databaseReference = database.getReference("sensors_message");
+        // Obtain a reference to the Firebase Storage instance
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        storageRef = storage.getReference().child("csv_files");
+
         // Initialize the Sensor Manager
         mSensorManagerAcc = (SensorManager) getSystemService(SENSOR_SERVICE);
         mSensorManagerGry = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -80,10 +112,17 @@ public class SensorService extends Service implements SensorEventListener {
             // TODO Auto-generated method stub
             level = intent.getIntExtra("level", 0);
             Log.d(TAG,"mBatInfoReceiver BATTERY LEVEL INFO ------------------- "+ String.valueOf(level) + "%");
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-            LocalDateTime now = LocalDateTime.now();
-            System.out.println(dtf.format(now));
-            String batteryinfo= dtf.format(now) + ","+ String.valueOf(level);
+            // https://developer.android.com/reference/java/lang/System#currentTimeMillis()
+            SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss:SSS");
+
+            // Get the system milisecond unix time stamp
+            // https://developer.android.com/reference/java/lang/System#currentTimeMillis()
+            dateFormat.setTimeZone(TimeZone.getDefault()); //TimeZone.getTimeZone("UTC")
+
+            long currentTimestampMillis = System.currentTimeMillis();
+            String batteryFormattedDateTime = dateFormat.format(new Date(currentTimestampMillis));
+
+            String batteryinfo= batteryFormattedDateTime + ","+ String.valueOf(level);
             BatteryInfo.add(batteryinfo);
             //contentTxt.setText(String.valueOf(level) + "%");
         }
@@ -124,8 +163,6 @@ public class SensorService extends Service implements SensorEventListener {
     @RequiresApi(api = Build.VERSION_CODES.N)
     protected void onResume() {
 
-        //super.onResume();
-
         //  Register broadcast receiver from Background Timer to check if it is over or not.
             //Log.i(TAG,"Registered Broadcast Receiver");
 
@@ -157,28 +194,50 @@ public class SensorService extends Service implements SensorEventListener {
     }
 
     public void getAccelerometerData(SensorEvent event ){
+        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss:SSS");
+        dateFormat.setTimeZone(TimeZone.getDefault());
+
+        long currentTimestampMillis = System.currentTimeMillis();
+        String AccformattedDateTime = dateFormat.format(new Date(currentTimestampMillis));
+
+//        System.out.println(AccformattedDateTime);
+
         // System.out.println(TAG + ": Intent from Background Timer Variable: intent_isFinished " + intent_isFinished);
         // event.timestamp: The time in nanoseconds at which the event happened.
         // event.values: public final float[]	values
-        String data_accelerometer = event.timestamp + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
-        //Log.d(TAG,"acc_data: "+data_accelerometer);
+        String data_accelerometer = event.timestamp + "," + AccformattedDateTime + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
+        databaseReference.push().setValue(data_accelerometer);
 
-        //System.out.println("data_accelerometer: " + data_accelerometer);
         AccelerometerData.add(data_accelerometer);
 
     }
     public void getGryData(SensorEvent event ){
-        String data_gryo =   event.timestamp + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1]) + "," + String.valueOf(event.values[2]);
-       // Log.d(TAG,"data_gryo: "+data_gryo);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss:SSS");
+
+        // Get the system milisecond unix time stamp
+        // https://developer.android.com/reference/java/lang/System#currentTimeMillis()
+        dateFormat.setTimeZone(TimeZone.getDefault());
+
+        long currentTimestampMillis = System.currentTimeMillis();
+        String GryformattedDateTime = dateFormat.format(new Date(currentTimestampMillis));
+
+//        System.out.println(GryformattedDateTime);
+        String data_gryo =   event.timestamp + "," + GryformattedDateTime+ "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1]) + "," + String.valueOf(event.values[2]);
         GryData.add(data_gryo);
     }
     public void getHrData(SensorEvent event){
-        String data_hr =   event.timestamp + "," + String.valueOf(event.values[0]);
+        // https://developer.android.com/reference/java/lang/System#currentTimeMillis()
+        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss:SSS");
 
-       //String data_hr = event.timestamp + "," + String.valueOf(event.values[0]); //event.timestamp + "," + String.valueOf(event.values[0]); //format("%d,%s", event.timestamp, event.values[0]);
-        Log.d(TAG,"hr_data: "+data_hr); // 402550836440 , 401550836440
+        // Get the system milisecond unix time stamp
+        // https://developer.android.com/reference/java/lang/System#currentTimeMillis()
+        dateFormat.setTimeZone(TimeZone.getDefault()); //TimeZone.getTimeZone("UTC")
+
+        long currentTimestampMillis = System.currentTimeMillis();
+        String HRformattedDateTime = dateFormat.format(new Date(currentTimestampMillis));
+        String data_hr =  HRformattedDateTime +","+ String.valueOf(event.values[0]);
+        Log.d(TAG,"hr_data: "+String.valueOf(event.values[0])); // 402550836440 , 401550836440
         HRData.add(data_hr);
-
     }
 
 
@@ -186,7 +245,6 @@ public class SensorService extends Service implements SensorEventListener {
         @Override
     public void onSensorChanged(SensorEvent event) {
            // onResume(); // call this to register listiner for everytime HR was registered.
-
             // Log.i(TAG,"intent_isFinished: Intent recieved - : " +intent_isFinished);
            // Log.d(TAG,"SENSOR TYPE: event.sensor.getType() "+event.sensor.getType());
             //Log.d(TAG,"Sensor.TYPE_ACCELEROMETER  "+Sensor.TYPE_ACCELEROMETER);
@@ -194,7 +252,6 @@ public class SensorService extends Service implements SensorEventListener {
             //Log.d(TAG,"Sensor.TYPE_HEART_RATE  "+Sensor.TYPE_HEART_RATE);
            // Log.i(TAG,"onSensorChanged() broadcasted from timer intent_isFinished : " + intent_isFinished);
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-
                 getAccelerometerData(event);
             }// start_time - 148597546056210 # second st time - 148837473364559
             if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
@@ -210,22 +267,22 @@ public class SensorService extends Service implements SensorEventListener {
 
             // Get intent form background Timer and once finished save the files and clear the array data.
             if(intent_isFinished == 1){
-                //Log.d(TAG,"Message from backgroung timer that is done one: "+intent_isFinished);
-                //Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/.");
-                //Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
-//                BatteryInfo.add(batteryinfo);
+                // Log.d(TAG,"Message from backgroung timer that is done one: "+intent_isFinished);
+                // Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/.");
+                // Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
+                // BatteryInfo.add(batteryinfo);
                 Log.d(TAG,"onSensorChanged(): bBATTERY INFO" +BatteryInfo);
-                fileio.save_data( BatteryInfo, "onchange" + "_battery");
-
-                fileio.save_data( GryData, "30Hz" + "_gry");
-               // Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
+                String filepath_battery = fileio.save_data( BatteryInfo, "onchange" + "_battery");
+                String filepath_gry = fileio.save_data( GryData, "30Hz" + "_gry");
+                // Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
                 Log.d(TAG,"onSensorChanged() ACC DATA --" +AccelerometerData);
-                fileio.save_data( AccelerometerData, "30Hz" + "_acc");
+                String filepath_acc = fileio.save_data( AccelerometerData, "30Hz" + "_acc");
+                Log.d(TAG, "filepath_acc(): " + filepath_acc);
+                // upload to firebase
+                uploadCsvFile(filepath_acc);
                 Log.d(TAG,"onSensorChanges() HRData: "+HRData);
-
-                fileio.save_data( HRData, "1Hz" + "_hr");
+                String filepath_hr = fileio.save_data( HRData, "1Hz" + "_hr");
                 //Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/." +HRData);
-
                 // Clear the previous written array.
                 BatteryInfo.clear();
                 GryData.clear();
@@ -233,7 +290,50 @@ public class SensorService extends Service implements SensorEventListener {
                 HRData.clear();
                 // set intent finished back to 0
                 intent_isFinished = 0;
-
             }
         }
+
+
+        private void uploadCsvFile(String filePath ) {
+        try {
+            // Get the file path from the file Uri
+//            String filePath = fileUri.getPath();
+
+            // Create an InputStream from the CSV file
+            InputStream stream = new FileInputStream(filePath);
+
+            // Create a reference to the file in Firebase Storage
+//            StorageReference storageRef = null;
+            StorageReference fileRef = storageRef.child(filePath);
+
+            // Upload the file to Firebase Storage
+            UploadTask uploadTask = fileRef.putStream(stream);
+
+            // Listen for upload success and failure events
+            uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    // Handle successful upload
+                    Log.d(TAG, "File uploaded successfully!");
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    // Handle unsuccessful upload
+                    Log.e(TAG, "Failed to upload file: " + e.getMessage());
+                }
+            }).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                    // Track upload progress if needed
+                    double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+                    Log.d(TAG, "Upload progress: " + progress + "%");
+                }
+            });
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Log.e(TAG, "File not found: " + e.getMessage());
+        }
+    }
+
 }

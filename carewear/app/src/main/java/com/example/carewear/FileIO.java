@@ -1,16 +1,27 @@
 package com.example.carewear;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -30,7 +41,7 @@ public class FileIO {
      * Writes the CSV file with the current timestamp in the file name for accelerometer data.
      * Takes in the toggle button view, the data to be added, and filename Eg: acc,gry ...
      * */
-    public void save_data(ArrayList<String> data, String filename){
+    public String save_data(ArrayList<String> data, String filename){
         Log.d(TAG, "DAA FROM FILE IO - save_data() "+data);
         //System.out.println("BUTTON PRESSED : Sensors Button Pressed");
         try{
@@ -46,6 +57,8 @@ public class FileIO {
             System.out.println("DATE AND TIME CURRENT: ---" + time);
             // Depending on the user selection enter the.
             File file = new File(dir, "/"+ filename +"_"+ time +".csv");
+            String file_name_saved = dir + "/"+ filename +"_"+ time +".csv";
+
             if (!file.exists()) {
                 file.createNewFile();
             }
@@ -53,7 +66,7 @@ public class FileIO {
             OutputStreamWriter osw = new OutputStreamWriter(f);
 //            BufferedWriter writer = new BufferedWriter(osw);
             // Buffer is needed to create the UTF 8 formatting and
-            String mHeader ="Timestamp," + "x," + "y," + "z";
+            String mHeader = "DateTime"+ ","+" x," + "y," + "z";
             String mHeaderHr ="Timestamp," + "HR_BPM";
 
             Set<PosixFilePermission> perms = new HashSet<>();
@@ -87,11 +100,14 @@ public class FileIO {
                 osw.close();
                f.close();
                 Log.i(TAG, "Data saved");
+//                val mountainImagesRef = storageRef.child("images/mountains.jpg");
+
 //                Toast.makeText(getBaseContext(), filename + " Data saved", Toast.LENGTH_LONG).show();
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.d(TAG,"IO Exception");
             }
+            return file_name_saved;
         } catch (FileNotFoundException e) {
             Log.d(TAG,"FILE NOT FOUND Exception");
 
@@ -101,6 +117,7 @@ public class FileIO {
 
             e.printStackTrace();
         }
+      return "";
     }
     public void save_Jsondata(View view, String jsonData, String filename){
         System.out.println("BUTTON PRESSED : Sensors Button Pressed");
@@ -113,9 +130,11 @@ public class FileIO {
             }
             Date currentTime = Calendar.getInstance().getTime();
             long time= System.currentTimeMillis();
-            System.out.println("DATE AND TIME CURRENT: ---" + time);
+            long currentUnixTimestamp = time / 1000L;
+
+            System.out.println("DATE AND TIME CURRENT: ---" + currentUnixTimestamp);
             // Depending on the user selection enter the.
-            File file = new File(dir, "/"+ filename +"_"+ time +".txt");
+            File file = new File(dir, "/"+ filename +"_"+ currentUnixTimestamp +".txt");
             if (!file.exists()) {
                 file.createNewFile();
             }

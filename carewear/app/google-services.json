@@ -1,0 +1,83 @@
+{
+  "project_info": {
+    "project_number": "683558385369",
+    "firebase_url": "https://carewear-77d8e-default-rtdb.firebaseio.com",
+    "project_id": "carewear-77d8e",
+    "storage_bucket": "carewear-77d8e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:683558385369:android:b648f6d474384c5847b0c8",
+        "android_client_info": {
+          "package_name": "com.example.care_hub"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "683558385369-rf9pob7mc1tnon9tsuqmi6rdd2k374aa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDupn9XiB_QsuRNlNtX_NikluuWlsEoKd8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "683558385369-rf9pob7mc1tnon9tsuqmi6rdd2k374aa.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "683558385369-0spl2dcjmr9a4fafie966g2088jrltnh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.careHub"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:683558385369:android:2f3c1a038b4ade4e47b0c8",
+        "android_client_info": {
+          "package_name": "com.example.carewear"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "683558385369-rf9pob7mc1tnon9tsuqmi6rdd2k374aa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDupn9XiB_QsuRNlNtX_NikluuWlsEoKd8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "683558385369-rf9pob7mc1tnon9tsuqmi6rdd2k374aa.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "683558385369-0spl2dcjmr9a4fafie966g2088jrltnh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.careHub"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
