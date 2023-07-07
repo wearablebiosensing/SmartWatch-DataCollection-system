@@ -1,4 +1,7 @@
 package com.example.carewear;
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -7,6 +10,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -16,14 +20,19 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.StatFs;
+import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -32,6 +41,7 @@ import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -40,6 +50,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.TimeZone;
 
 
@@ -59,7 +71,13 @@ public class SensorService extends Service implements SensorEventListener {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         private DatabaseReference databaseReference;
         int level;
-        private StorageReference storageRef;
+        private StorageReference firebaseStorage;
+        FirebaseStorage storage;
+        // Keep track of file names that are alreeady uploaded to firebase.
+        private HashSet<String> uploadedFileNames = new HashSet<>();
+        // Device ID
+        private String deviceId;
+
 
     @Override
     public void onCreate() {
@@ -69,8 +87,9 @@ public class SensorService extends Service implements SensorEventListener {
         // Set up Firebase
         databaseReference = database.getReference("sensors_message");
         // Obtain a reference to the Firebase Storage instance
-        FirebaseStorage storage = FirebaseStorage.getInstance();
-        storageRef = storage.getReference().child("csv_files");
+         storage = FirebaseStorage.getInstance();
+//        firebaseStorage = FirebaseStorage.getInstance();
+//        storageRef = storage.getReference().child("csv_files");
 
         // Initialize the Sensor Manager
         mSensorManagerAcc = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -206,7 +225,8 @@ public class SensorService extends Service implements SensorEventListener {
         // event.timestamp: The time in nanoseconds at which the event happened.
         // event.values: public final float[]	values
         String data_accelerometer = event.timestamp + "," + AccformattedDateTime + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
-        databaseReference.push().setValue(data_accelerometer);
+            // uncoment to push data to realtime database.
+        //        databaseReference.push().setValue(data_accelerometer);
 
         AccelerometerData.add(data_accelerometer);
 
@@ -277,9 +297,21 @@ public class SensorService extends Service implements SensorEventListener {
                 // Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
                 Log.d(TAG,"onSensorChanged() ACC DATA --" +AccelerometerData);
                 String filepath_acc = fileio.save_data( AccelerometerData, "30Hz" + "_acc");
+                // If Internet is avaliable then save files in the firebase storage checks network connections fter every 5 mins..
+                if (NetworkUtils.isNetworkAvailable(this)) {
+                    // Internet connection is available
+                    // Perform your tasks requiring internet here
+                    uploadFilesFromFolderToStorage(filepath_acc);
+                    Toast.makeText(this, "Internet connection available", Toast.LENGTH_SHORT).show();
+                } else {
+                    // No internet connection
+                    // Handle the lack of connectivity here
+                    Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
+                }
+
                 Log.d(TAG, "filepath_acc(): " + filepath_acc);
                 // upload to firebase
-                uploadCsvFile(filepath_acc);
+//                uploadCsvFile(filepath_acc);
                 Log.d(TAG,"onSensorChanges() HRData: "+HRData);
                 String filepath_hr = fileio.save_data( HRData, "1Hz" + "_hr");
                 //Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/." +HRData);
@@ -293,7 +325,73 @@ public class SensorService extends Service implements SensorEventListener {
             }
         }
 
+    private void uploadFilesFromFolderToStorage(String folderPath) {
+        // Get a reference to the storage location
+        StorageReference storageRef = storage.getReference();
 
+        // Get the file names from the folder
+        File folder = new File(folderPath);
+        File[] files = folder.listFiles();
+
+        // Iterate through the files and upload each one
+        for (File file : files) {
+            Uri fileUri = Uri.fromFile(file);
+            String fileName = file.getName();
+
+            // Check if the file has already been uploaded
+            if (uploadedFileNames.contains(fileName)) {
+                continue; // Skip already uploaded files
+            }
+
+            String currentDate = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(new Date());
+            String device_id =  getDeviceIdStr();
+            // Create a reference to the file in Firebase Storage.
+            StorageReference fileRef = storageRef.child(device_id+"/"+currentDate + "/"+ fileName);
+
+            // Upload file to Firebase Storage
+            fileRef.putFile(fileUri)
+                    .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                            // File uploaded successfully
+                            // Handle the success event
+                        }
+                    })
+                    .addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                            if (task.isSuccessful()) {
+                                // File upload completed
+                                // Handle the completion event
+                            } else {
+                                // File upload failed
+                                // Handle the failure event
+                            }
+                        }
+                    });
+        }
+    }
+//    @SuppressLint("HardwareIds")
+    void getDeviceId() {
+        TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (telephonyManager != null) {
+            deviceId = telephonyManager.getDeviceId();
+            if (deviceId != null) {
+                // Device ID (IMEI) retrieved successfully
+                Log.d("Device ID", deviceId);
+            } else {
+                // Device ID not available
+                Log.d("Device ID", "Not available");
+            }
+        }
+    }
+
+    public String getDeviceIdStr() {
+        return deviceId;
+    }
+
+
+/*
         private void uploadCsvFile(String filePath ) {
         try {
             // Get the file path from the file Uri
@@ -304,7 +402,7 @@ public class SensorService extends Service implements SensorEventListener {
 
             // Create a reference to the file in Firebase Storage
 //            StorageReference storageRef = null;
-            StorageReference fileRef = storageRef.child(filePath);
+            StorageReference fileRef = firebaseStorage.child(filePath);
 
             // Upload the file to Firebase Storage
             UploadTask uploadTask = fileRef.putStream(stream);
@@ -335,5 +433,5 @@ public class SensorService extends Service implements SensorEventListener {
             Log.e(TAG, "File not found: " + e.getMessage());
         }
     }
-
+*/
 }

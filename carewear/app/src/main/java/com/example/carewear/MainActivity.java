@@ -10,8 +10,10 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -40,7 +42,17 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        FirebaseApp.initializeApp(this);
+        // Check for internet connectivity
+        if (NetworkUtils.isNetworkAvailable(this)) {
+            // Internet connection is available
+            // Perform your tasks requiring internet here
+            Toast.makeText(this, "Internet connection available", Toast.LENGTH_SHORT).show();
+        } else {
+            // No internet connection
+            // Handle the lack of connectivity here
+            Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
+        }
+
 
         Log.d(TAG, "Build Version -------- " + String.valueOf(Build.VERSION.SDK_INT));
         binding = ActivityMainBinding.inflate(getLayoutInflater());
@@ -160,4 +172,11 @@ public class MainActivity extends Activity {
             Log.i(TAG ,"Countdown remaining:  " +milisUntillFinished);
         }
     }
+
+    // ...
+
+
+    // ...
+
+
 }

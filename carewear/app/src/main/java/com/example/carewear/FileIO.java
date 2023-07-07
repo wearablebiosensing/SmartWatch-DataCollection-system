@@ -57,7 +57,7 @@ public class FileIO {
             System.out.println("DATE AND TIME CURRENT: ---" + time);
             // Depending on the user selection enter the.
             File file = new File(dir, "/"+ filename +"_"+ time +".csv");
-            String file_name_saved = dir + "/"+ filename +"_"+ time +".csv";
+//            String file_name_saved = dir ;  //+ "/"+ filename +"_"+ time +".csv";
 
             if (!file.exists()) {
                 file.createNewFile();
@@ -107,7 +107,7 @@ public class FileIO {
                 e.printStackTrace();
                 Log.d(TAG,"IO Exception");
             }
-            return file_name_saved;
+            return dir.toString();
         } catch (FileNotFoundException e) {
             Log.d(TAG,"FILE NOT FOUND Exception");
 
