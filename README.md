@@ -19,3 +19,4 @@ App has minimal to no UI it runs in the background collects data and saves files
 ## Resources:
 
 - Sensors Manager API - https://developer.android.com/reference/android/hardware/SensorManager
+- MiroBoad Link: https://miro.com/app/board/uXjVMT6jOEA=/?share_link_id=543197703029
