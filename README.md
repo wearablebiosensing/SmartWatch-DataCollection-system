@@ -15,6 +15,12 @@ App has minimal to no UI it runs in the background collects data and saves files
 
 ![alt text](https://github.com/wearablebiosensing/SmartWatch-DataCollection-system/blob/main/carewear_app.png)
 
+CareWearPortal View:
+
+```conda create --name <env> --file requirements.txt```
+
+![alt text](https://github.com/wearablebiosensing/SmartWatch-DataCollection-system/blob/main/CareWearKPIdashboard.png)
+
 
 ## Resources:
 
