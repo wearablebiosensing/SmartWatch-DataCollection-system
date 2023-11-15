@@ -24,7 +24,11 @@ import com.google.firebase.FirebaseApp;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
+/*
+* GitHub Link:
+* //https://github.com/wearablebiosensing/SmartWatch-DataCollection-system
+*
+* */
 
 public class MainActivity extends Activity {
     private static final int PERMISSION_REQUEST_CODE = 1;
