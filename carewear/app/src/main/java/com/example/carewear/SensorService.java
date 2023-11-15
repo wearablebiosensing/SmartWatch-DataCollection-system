@@ -1,4 +1,5 @@
 package com.example.carewear;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -6,6 +7,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -20,6 +22,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.StatFs;
+import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.widget.Toast;
@@ -56,61 +59,62 @@ import java.util.TimeZone;
 
 
 public class SensorService extends Service implements SensorEventListener {
-        String TAG = "SensorService";
-        public static final   String COUNTDOWN_BR  = "com.example.carewear";
-        Intent intentSensorService = new Intent(COUNTDOWN_BR);
-        int intent_isFinished;
-        FileIO fileio = new FileIO();
-        SensorManager mSensorManagerAcc;
-        SensorManager mSensorManagerGry;
-        SensorManager mSensorManagerHr;
-        ArrayList<String> AccelerometerData = new ArrayList<String>();
-        ArrayList<String> GryData = new ArrayList<String>();
-        ArrayList<String> HRData = new ArrayList<String>();
-        ArrayList<String> BatteryInfo = new ArrayList<String>();
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        private DatabaseReference databaseReference;
-        int level;
-        private StorageReference firebaseStorage;
-        FirebaseStorage storage;
-        // Keep track of file names that are alreeady uploaded to firebase.
-        private HashSet<String> uploadedFileNames = new HashSet<>();
-        // Device ID
-        private String deviceId;
+    String TAG = "SensorService";
+    public static final String COUNTDOWN_BR = "com.example.carewear";
+    Intent intentSensorService = new Intent(COUNTDOWN_BR);
+    int intent_isFinished;
+    FileIO fileio = new FileIO();
+    SensorManager mSensorManagerAcc;
+    SensorManager mSensorManagerGry;
+    SensorManager mSensorManagerHr;
+    ArrayList<String> AccelerometerData = new ArrayList<String>();
+    ArrayList<String> GryData = new ArrayList<String>();
+    ArrayList<String> HRData = new ArrayList<String>();
+    ArrayList<String> BatteryInfo = new ArrayList<String>();
+    FirebaseDatabase database = FirebaseDatabase.getInstance();
+    private DatabaseReference databaseReference;
+    int level;
+    private StorageReference firebaseStorage;
+    FirebaseStorage storage;
+    // Keep track of file names that are alreeady uploaded to firebase.
+    private HashSet<String> uploadedFileNames = new HashSet<>();
+    // Device ID
+    private String deviceId;
+    BluetoothAdapter bluetoothAdapter;
 
 
     @Override
     public void onCreate() {
         super.onCreate();
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
 
         // Set up Firebase
         databaseReference = database.getReference("sensors_message");
         // Obtain a reference to the Firebase Storage instance
-         storage = FirebaseStorage.getInstance();
+        storage = FirebaseStorage.getInstance();
 //        firebaseStorage = FirebaseStorage.getInstance();
 //        storageRef = storage.getReference().child("csv_files");
 
         // Initialize the Sensor Manager
         mSensorManagerAcc = (SensorManager) getSystemService(SENSOR_SERVICE);
         mSensorManagerGry = (SensorManager) getSystemService(SENSOR_SERVICE);
-        mSensorManagerHr  = (SensorManager) getSystemService(SENSOR_SERVICE);
-        Log.d(TAG,"onCreate() mSensorManagerAcc:----  "+mSensorManagerAcc);
-        Log.d(TAG,"onCreate() mSensorManagerGry:----  "+mSensorManagerGry);
-        Log.d(TAG,"onCreate()  mSensorManagerHr:---- "+mSensorManagerHr);
+        mSensorManagerHr = (SensorManager) getSystemService(SENSOR_SERVICE);
+        Log.d(TAG, "onCreate() mSensorManagerAcc:----  " + mSensorManagerAcc);
+        Log.d(TAG, "onCreate() mSensorManagerGry:----  " + mSensorManagerGry);
+        Log.d(TAG, "onCreate()  mSensorManagerHr:---- " + mSensorManagerHr);
 //        File sdCard = Environment.getExternalStorageDirectory();
-            /*Gets the SD CARD STORAGE AAVALIABLE Approx 7GB */
+        /*Gets the SD CARD STORAGE AAVALIABLE Approx 7GB */
         StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
         long bytesAvailable;
         if (android.os.Build.VERSION.SDK_INT >=
                 android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
             bytesAvailable = stat.getBlockSizeLong() * stat.getAvailableBlocksLong();
+        } else {
+            bytesAvailable = (long) stat.getBlockSize() * (long) stat.getAvailableBlocks();
         }
-        else {
-            bytesAvailable = (long)stat.getBlockSize() * (long)stat.getAvailableBlocks();
-        }
-        long megAvailable = bytesAvailable / (1024 * 1024*1024);
-        Log.e(TAG,"STORAGE INFO - Available GB : "+megAvailable);
+        long megAvailable = bytesAvailable / (1024 * 1024 * 1024);
+        Log.e(TAG, "STORAGE INFO - Available GB : " + megAvailable);
 
     }
 
@@ -121,16 +125,16 @@ public class SensorService extends Service implements SensorEventListener {
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            intent_isFinished = intent.getIntExtra("isTimerFinished",0);
+            intent_isFinished = intent.getIntExtra("isTimerFinished", 0);
             //startWakefulService(context, SensorService.class);
         }
     };
-    private BroadcastReceiver mBatInfoReceiver = new BroadcastReceiver(){
+    private BroadcastReceiver mBatInfoReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context arg0, Intent intent) {
             // TODO Auto-generated method stub
             level = intent.getIntExtra("level", 0);
-            Log.d(TAG,"mBatInfoReceiver BATTERY LEVEL INFO ------------------- "+ String.valueOf(level) + "%");
+            Log.d(TAG, "mBatInfoReceiver BATTERY LEVEL INFO ------------------- " + String.valueOf(level) + "%");
             // https://developer.android.com/reference/java/lang/System#currentTimeMillis()
             SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss:SSS");
 
@@ -141,37 +145,37 @@ public class SensorService extends Service implements SensorEventListener {
             long currentTimestampMillis = System.currentTimeMillis();
             String batteryFormattedDateTime = dateFormat.format(new Date(currentTimestampMillis));
 
-            String batteryinfo= batteryFormattedDateTime + ","+ String.valueOf(level);
+            String batteryinfo = batteryFormattedDateTime + "," + String.valueOf(level);
             BatteryInfo.add(batteryinfo);
             //contentTxt.setText(String.valueOf(level) + "%");
         }
     };
 
-   @Override
-   public int onStartCommand(final Intent intent, int flags, int startId) {
-       final String CHANNELID = "Foreground Service ID";
-       NotificationChannel channel = new NotificationChannel(
-               CHANNELID,
-               CHANNELID,
-               NotificationManager.IMPORTANCE_LOW
-       );
+    @Override
+    public int onStartCommand(final Intent intent, int flags, int startId) {
+        final String CHANNELID = "Foreground Service ID";
+        NotificationChannel channel = new NotificationChannel(
+                CHANNELID,
+                CHANNELID,
+                NotificationManager.IMPORTANCE_LOW
+        );
 
-       getSystemService(NotificationManager.class).createNotificationChannel(channel);
-       Notification.Builder notification = new Notification.Builder(this, CHANNELID)
-               .setContentText("Service is running")
-               .setContentTitle("Service enabled")
-               .setSmallIcon(R.drawable.ic_launcher_background);
+        getSystemService(NotificationManager.class).createNotificationChannel(channel);
+        Notification.Builder notification = new Notification.Builder(this, CHANNELID)
+                .setContentText("Service is running")
+                .setContentTitle("Service enabled")
+                .setSmallIcon(R.drawable.ic_launcher_background);
 
-       startForeground(1001, notification.build());
+        startForeground(1001, notification.build());
 
-       registerReceiver(broadcastReceiver,new IntentFilter(BackgroundTimer.COUNTDOWN_BR));
-       registerReceiver(mBatInfoReceiver,
-               new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-       onResume();
+        registerReceiver(broadcastReceiver, new IntentFilter(BackgroundTimer.COUNTDOWN_BR));
+        registerReceiver(mBatInfoReceiver,
+                new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        onResume();
 
 
-       return super.onStartCommand(intent,flags,startId);
-   }
+        return super.onStartCommand(intent, flags, startId);
+    }
 
     @Nullable
     @Override
@@ -183,28 +187,28 @@ public class SensorService extends Service implements SensorEventListener {
     protected void onResume() {
 
         //  Register broadcast receiver from Background Timer to check if it is over or not.
-            //Log.i(TAG,"Registered Broadcast Receiver");
+        //Log.i(TAG,"Registered Broadcast Receiver");
 
-            // if recording acc data register listener for acc values.
-            Sensor accelerometer = mSensorManagerAcc.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-            // To change the sampling rate apply it in microseconds.
-            // 1/#Hz * 1000000 micro seconds.
-            mSensorManagerAcc.registerListener((SensorEventListener) this, accelerometer, (1 / 30) * 1000000); // 50 Hz // 20000 = 50Hz in microseconds
-            Sensor gyroscope = mSensorManagerGry.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-            // To change the sampling rate apply it in microseconds.
-            mSensorManagerGry.registerListener((SensorEventListener) this, gyroscope, (1 / 30) * 1000000); // 50 Hz // 20000 microseconds = 50Hz in
+        // if recording acc data register listener for acc values.
+        Sensor accelerometer = mSensorManagerAcc.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        // To change the sampling rate apply it in microseconds.
+        // 1/#Hz * 1000000 micro seconds.
+        mSensorManagerAcc.registerListener((SensorEventListener) this, accelerometer, (1 / 30) * 1000000); // 50 Hz // 20000 = 50Hz in microseconds
+        Sensor gyroscope = mSensorManagerGry.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        // To change the sampling rate apply it in microseconds.
+        mSensorManagerGry.registerListener((SensorEventListener) this, gyroscope, (1 / 30) * 1000000); // 50 Hz // 20000 microseconds = 50Hz in
 
-            Sensor mHeartRate = mSensorManagerHr.getDefaultSensor(Sensor.TYPE_HEART_RATE);
-                if (mSensorManagerHr.getDefaultSensor(Sensor.TYPE_HEART_RATE) != null) {
-                    Log.d(TAG,"============== HR SENSOR  AVAILABLE==============");
-                } else {
-                    Log.d(TAG,"============== HR SENSOR NOT AVAILABLE==============");
-                }
-            //Log.d(TAG,"HEART RATE SENSOR ----------: "+heart_rate);
+        Sensor mHeartRate = mSensorManagerHr.getDefaultSensor(Sensor.TYPE_HEART_RATE);
+        if (mSensorManagerHr.getDefaultSensor(Sensor.TYPE_HEART_RATE) != null) {
+            Log.d(TAG, "============== HR SENSOR  AVAILABLE==============");
+        } else {
+            Log.d(TAG, "============== HR SENSOR NOT AVAILABLE==============");
+        }
+        //Log.d(TAG,"HEART RATE SENSOR ----------: "+heart_rate);
 
         // To change the sampling rate apply it in microseconds.
-            mSensorManagerHr.registerListener((SensorEventListener) this, mHeartRate, (1 / 1) * 1000000); // 1 Hz // 1000000 = 1Hz
-            Log.d(TAG,"HEART RATE SENSOR mSensorManagerHr ----------: "+mSensorManagerHr);
+        mSensorManagerHr.registerListener((SensorEventListener) this, mHeartRate, (1 / 1) * 1000000); // 1 Hz // 1000000 = 1Hz
+        Log.d(TAG, "HEART RATE SENSOR mSensorManagerHr ----------: " + mSensorManagerHr);
     }
 
     @Override
@@ -212,7 +216,7 @@ public class SensorService extends Service implements SensorEventListener {
 
     }
 
-    public void getAccelerometerData(SensorEvent event ){
+    public void getAccelerometerData(SensorEvent event) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss:SSS");
         dateFormat.setTimeZone(TimeZone.getDefault());
 
@@ -225,13 +229,14 @@ public class SensorService extends Service implements SensorEventListener {
         // event.timestamp: The time in nanoseconds at which the event happened.
         // event.values: public final float[]	values
         String data_accelerometer = event.timestamp + "," + AccformattedDateTime + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
-            // uncoment to push data to realtime database.
+        // uncoment to push data to realtime database.
         //        databaseReference.push().setValue(data_accelerometer);
 
         AccelerometerData.add(data_accelerometer);
 
     }
-    public void getGryData(SensorEvent event ){
+
+    public void getGryData(SensorEvent event) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss:SSS");
 
         // Get the system milisecond unix time stamp
@@ -242,10 +247,11 @@ public class SensorService extends Service implements SensorEventListener {
         String GryformattedDateTime = dateFormat.format(new Date(currentTimestampMillis));
 
 //        System.out.println(GryformattedDateTime);
-        String data_gryo =   event.timestamp + "," + GryformattedDateTime+ "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1]) + "," + String.valueOf(event.values[2]);
+        String data_gryo = event.timestamp + "," + GryformattedDateTime + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1]) + "," + String.valueOf(event.values[2]);
         GryData.add(data_gryo);
     }
-    public void getHrData(SensorEvent event){
+
+    public void getHrData(SensorEvent event) {
         // https://developer.android.com/reference/java/lang/System#currentTimeMillis()
         SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss:SSS");
 
@@ -255,75 +261,75 @@ public class SensorService extends Service implements SensorEventListener {
 
         long currentTimestampMillis = System.currentTimeMillis();
         String HRformattedDateTime = dateFormat.format(new Date(currentTimestampMillis));
-        String data_hr =  HRformattedDateTime +","+ String.valueOf(event.values[0]);
-        Log.d(TAG,"hr_data: "+String.valueOf(event.values[0])); // 402550836440 , 401550836440
+        String data_hr = HRformattedDateTime + "," + String.valueOf(event.values[0]);
+        Log.d(TAG, "hr_data: " + String.valueOf(event.values[0])); // 402550836440 , 401550836440
         HRData.add(data_hr);
     }
 
 
-        // SensorEvent: This class represents a Sensor event and holds information such as the sensor's type, the time-stamp, accuracy and of course the sensor's data.@Override
-        @Override
+    // SensorEvent: This class represents a Sensor event and holds information such as the sensor's type, the time-stamp, accuracy and of course the sensor's data.@Override
+    @Override
     public void onSensorChanged(SensorEvent event) {
-           // onResume(); // call this to register listiner for everytime HR was registered.
-            // Log.i(TAG,"intent_isFinished: Intent recieved - : " +intent_isFinished);
-           // Log.d(TAG,"SENSOR TYPE: event.sensor.getType() "+event.sensor.getType());
-            //Log.d(TAG,"Sensor.TYPE_ACCELEROMETER  "+Sensor.TYPE_ACCELEROMETER);
-            //Log.d(TAG,"Sensor.TYPE_GYROSCOPE  "+Sensor.TYPE_GYROSCOPE);
-            //Log.d(TAG,"Sensor.TYPE_HEART_RATE  "+Sensor.TYPE_HEART_RATE);
-           // Log.i(TAG,"onSensorChanged() broadcasted from timer intent_isFinished : " + intent_isFinished);
-            if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-                getAccelerometerData(event);
-            }// start_time - 148597546056210 # second st time - 148837473364559
-            if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
-                getGryData(event);
-            }
-            if (event.sensor.getType() == Sensor.TYPE_HEART_RATE) {
-                getHrData(event);
-
-            }
-            //Log.d(TAG,"onSensorChanged() HR DATA --" +HRData);
-            //Log.d(TAG,"onSensorChanged() ACC DATA --" +AccelerometerData);
-            //Log.d(TAG,"onSensorChanged() GRY DATA --" +GryData);
-
-            // Get intent form background Timer and once finished save the files and clear the array data.
-            if(intent_isFinished == 1){
-                // Log.d(TAG,"Message from backgroung timer that is done one: "+intent_isFinished);
-                // Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/.");
-                // Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
-                // BatteryInfo.add(batteryinfo);
-                Log.d(TAG,"onSensorChanged(): bBATTERY INFO" +BatteryInfo);
-                String filepath_battery = fileio.save_data( BatteryInfo, "onchange" + "_battery");
-                String filepath_gry = fileio.save_data( GryData, "30Hz" + "_gry");
-                // Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
-                Log.d(TAG,"onSensorChanged() ACC DATA --" +AccelerometerData);
-                String filepath_acc = fileio.save_data( AccelerometerData, "30Hz" + "_acc");
-                // If Internet is avaliable then save files in the firebase storage checks network connections fter every 5 mins..
-                if (NetworkUtils.isNetworkAvailable(this)) {
-                    // Internet connection is available
-                    // Perform your tasks requiring internet here
-                    uploadFilesFromFolderToStorage(filepath_acc);
-                    Toast.makeText(this, "Internet connection available", Toast.LENGTH_SHORT).show();
-                } else {
-                    // No internet connection
-                    // Handle the lack of connectivity here
-                    Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
-                }
-
-                Log.d(TAG, "filepath_acc(): " + filepath_acc);
-                // upload to firebase
-//                uploadCsvFile(filepath_acc);
-                Log.d(TAG,"onSensorChanges() HRData: "+HRData);
-                String filepath_hr = fileio.save_data( HRData, "1Hz" + "_hr");
-                //Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/." +HRData);
-                // Clear the previous written array.
-                BatteryInfo.clear();
-                GryData.clear();
-                AccelerometerData.clear();
-                HRData.clear();
-                // set intent finished back to 0
-                intent_isFinished = 0;
-            }
+        // onResume(); // call this to register listiner for everytime HR was registered.
+        // Log.i(TAG,"intent_isFinished: Intent recieved - : " +intent_isFinished);
+        // Log.d(TAG,"SENSOR TYPE: event.sensor.getType() "+event.sensor.getType());
+        //Log.d(TAG,"Sensor.TYPE_ACCELEROMETER  "+Sensor.TYPE_ACCELEROMETER);
+        //Log.d(TAG,"Sensor.TYPE_GYROSCOPE  "+Sensor.TYPE_GYROSCOPE);
+        //Log.d(TAG,"Sensor.TYPE_HEART_RATE  "+Sensor.TYPE_HEART_RATE);
+        // Log.i(TAG,"onSensorChanged() broadcasted from timer intent_isFinished : " + intent_isFinished);
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            getAccelerometerData(event);
+        }// start_time - 148597546056210 # second st time - 148837473364559
+        if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+            getGryData(event);
         }
+        if (event.sensor.getType() == Sensor.TYPE_HEART_RATE) {
+            getHrData(event);
+
+        }
+        //Log.d(TAG,"onSensorChanged() HR DATA --" +HRData);
+        //Log.d(TAG,"onSensorChanged() ACC DATA --" +AccelerometerData);
+        //Log.d(TAG,"onSensorChanged() GRY DATA --" +GryData);
+
+        // Get intent form background Timer and once finished save the files and clear the array data.
+        if (intent_isFinished == 1) {
+            // Log.d(TAG,"Message from backgroung timer that is done one: "+intent_isFinished);
+            // Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/.");
+            // Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
+            // BatteryInfo.add(batteryinfo);
+            Log.d(TAG, "onSensorChanged(): bBATTERY INFO" + BatteryInfo);
+            String filepath_battery = fileio.save_data(BatteryInfo, "onchange" + "_battery");
+            String filepath_gry = fileio.save_data(GryData, "30Hz" + "_gry");
+            // Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS gry/.");
+            Log.d(TAG, "onSensorChanged() ACC DATA --" + AccelerometerData);
+            String filepath_acc = fileio.save_data(AccelerometerData, "30Hz" + "_acc");
+            // If Internet is avaliable then save files in the firebase storage checks network connections fter every 5 mins..
+            if (NetworkUtils.isNetworkAvailable(this)) {
+                // Internet connection is available
+                // Perform your tasks requiring internet here
+                uploadFilesFromFolderToStorage(filepath_acc);
+                Toast.makeText(this, "Internet connection available", Toast.LENGTH_SHORT).show();
+            } else {
+                // No internet connection
+                // Handle the lack of connectivity here
+                Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
+            }
+
+            Log.d(TAG, "filepath_acc(): " + filepath_acc);
+            // upload to firebase
+//                uploadCsvFile(filepath_acc);
+            Log.d(TAG, "onSensorChanges() HRData: " + HRData);
+            String filepath_hr = fileio.save_data(HRData, "1Hz" + "_hr");
+            //Log.d(TAG,"onSensorChanged() Call SAVE DATA CLASS hr/." +HRData);
+            // Clear the previous written array.
+            BatteryInfo.clear();
+            GryData.clear();
+            AccelerometerData.clear();
+            HRData.clear();
+            // set intent finished back to 0
+            intent_isFinished = 0;
+        }
+    }
 
     private void uploadFilesFromFolderToStorage(String folderPath) {
         // Get a reference to the storage location
@@ -344,7 +350,10 @@ public class SensorService extends Service implements SensorEventListener {
             }
 
             String currentDate = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(new Date());
-            String device_id =  getDeviceIdStr();
+//            String device_id =   getDeviceId();
+            // Check if Bluetooth is supported on the device
+            String device_id =  Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);;
+            Log.d(TAG,"device_id:  "+device_id);
             // Create a reference to the file in Firebase Storage.
             StorageReference fileRef = storageRef.child(device_id+"/"+currentDate + "/"+ fileName);
 
@@ -372,23 +381,7 @@ public class SensorService extends Service implements SensorEventListener {
         }
     }
 //    @SuppressLint("HardwareIds")
-    void getDeviceId() {
-        TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        if (telephonyManager != null) {
-            deviceId = telephonyManager.getDeviceId();
-            if (deviceId != null) {
-                // Device ID (IMEI) retrieved successfully
-                Log.d("Device ID", deviceId);
-            } else {
-                // Device ID not available
-                Log.d("Device ID", "Not available");
-            }
-        }
-    }
 
-    public String getDeviceIdStr() {
-        return deviceId;
-    }
 
 
 /*
