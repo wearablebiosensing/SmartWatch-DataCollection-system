@@ -13,7 +13,7 @@ App Architecture:
 CareWear App Screenshot:
 App has minimal to no UI it runs in the background collects data and saves files to the device itself.
 
-![alt text](https://github.com/wearablebiosensing/SmartWatch-DataCollection-system/blob/main/carewear_app)
+![alt text](https://github.com/wearablebiosensing/SmartWatch-DataCollection-system/blob/main/carewear_app.png)
 
 
 ## Resources:
