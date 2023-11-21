@@ -44,6 +44,9 @@ import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -81,13 +84,15 @@ public class SensorService extends Service implements SensorEventListener {
     // Device ID
     private String deviceId;
     BluetoothAdapter bluetoothAdapter;
-
+    private MQTTHelper mqttHelper;
 
     @Override
     public void onCreate() {
         super.onCreate();
+
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
+        mqttHelper = new MQTTHelper(getApplicationContext(), "tcp://test.mosquitto.org:1883");
 
         // Set up Firebase
         databaseReference = database.getReference("sensors_message");
@@ -115,6 +120,8 @@ public class SensorService extends Service implements SensorEventListener {
         }
         long megAvailable = bytesAvailable / (1024 * 1024 * 1024);
         Log.e(TAG, "STORAGE INFO - Available GB : " + megAvailable);
+        //Change this topic to whatever we use in MindGame
+        String mqttTopic = "hello/world";
 
     }
 
@@ -171,6 +178,21 @@ public class SensorService extends Service implements SensorEventListener {
         registerReceiver(broadcastReceiver, new IntentFilter(BackgroundTimer.COUNTDOWN_BR));
         registerReceiver(mBatInfoReceiver,
                 new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        mqttHelper.connect(new IMqttActionListener() {
+            @Override
+            public void onSuccess(IMqttToken asyncActionToken) {
+                // Connection successful
+                Log.d(TAG, " CONNECTED TO MQTT ----------: " );
+
+            }
+
+            @Override
+            public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                Log.d(TAG, "NOT CONNECTED TO MQTT ----------: " );
+
+//                Toast.makeText(Sen.this, "Failed to Connect", Toast.LENGTH_SHORT).show();
+            }
+        });
         onResume();
 
 
@@ -209,6 +231,7 @@ public class SensorService extends Service implements SensorEventListener {
         // To change the sampling rate apply it in microseconds.
         mSensorManagerHr.registerListener((SensorEventListener) this, mHeartRate, (1 / 1) * 1000000); // 1 Hz // 1000000 = 1Hz
         Log.d(TAG, "HEART RATE SENSOR mSensorManagerHr ----------: " + mSensorManagerHr);
+
     }
 
     @Override
@@ -231,10 +254,27 @@ public class SensorService extends Service implements SensorEventListener {
         String data_accelerometer = event.timestamp + "," + AccformattedDateTime + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1] + "," + String.valueOf(event.values[2]));
         // uncoment to push data to realtime database.
         //        databaseReference.push().setValue(data_accelerometer);
-
         AccelerometerData.add(data_accelerometer);
+        // existing code...
+        if (mqttHelper != null && mqttHelper.isConnected()) {
+            mqttHelper.publishMessage("AndroidWatch/acceleration", data_accelerometer, new IMqttActionListener() {
+                @Override
+                public void onSuccess(IMqttToken asyncActionToken) {
 
+                }
+
+                @Override
+                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+
+                }
+                // Callback implementations...
+            });
+        } else {
+            Log.d(TAG, "MQTT Client is not connected");
+        }
     }
+
+
 
     public void getGryData(SensorEvent event) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss:SSS");
