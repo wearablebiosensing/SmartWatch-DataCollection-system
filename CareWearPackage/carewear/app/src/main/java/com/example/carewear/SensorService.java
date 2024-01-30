@@ -255,9 +255,19 @@ public class SensorService extends Service implements SensorEventListener {
         // uncoment to push data to realtime database.
         //        databaseReference.push().setValue(data_accelerometer);
         AccelerometerData.add(data_accelerometer);
+
+
+        //IMPORTANT - Get device ID to be used in specific topic
+        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        String displayId = deviceId.substring(0, Math.min(deviceId.length(), 8)); // Display first 8 characters
+
+        // Prepare the MQTT message payload to include both accelerometer data and battery level
+        String mqttPayload = data_accelerometer;
+
+
         // existing code...
         if (mqttHelper != null && mqttHelper.isConnected()) {
-            mqttHelper.publishMessage("AndroidWatch/acceleration", data_accelerometer, new IMqttActionListener() {
+            mqttHelper.publishMessage("AndroidWatch/acceleration/" + displayId, mqttPayload, new IMqttActionListener() {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
 
@@ -288,12 +298,40 @@ public class SensorService extends Service implements SensorEventListener {
 
 //        System.out.println(GryformattedDateTime);
         String data_gryo = event.timestamp + "," + GryformattedDateTime + "," + String.valueOf(event.values[0]) + "," + String.valueOf(event.values[1]) + "," + String.valueOf(event.values[2]);
+
+        //IMPORTANT - Get device ID to be used in specific topic
+        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        String displayId = deviceId.substring(0, Math.min(deviceId.length(), 8)); // Display first 8 characters
+
+        // Prepare the MQTT message payload to include both accelerometer data and battery level
+        String mqttPayload = data_gryo;
+
+
+        // existing code...
+        if (mqttHelper != null && mqttHelper.isConnected()) {
+            mqttHelper.publishMessage("AndroidWatch/gyro/" + displayId, mqttPayload, new IMqttActionListener() {
+                @Override
+                public void onSuccess(IMqttToken asyncActionToken) {
+
+                }
+
+                @Override
+                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+
+                }
+                // Callback implementations...
+            });
+        } else {
+            Log.d(TAG, "MQTT Client is not connected");
+        }
+
         GryData.add(data_gryo);
     }
 
     public void getHrData(SensorEvent event) {
         // https://developer.android.com/reference/java/lang/System#currentTimeMillis()
         SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss:SSS");
+
 
         // Get the system milisecond unix time stamp
         // https://developer.android.com/reference/java/lang/System#currentTimeMillis()
@@ -303,6 +341,36 @@ public class SensorService extends Service implements SensorEventListener {
         String HRformattedDateTime = dateFormat.format(new Date(currentTimestampMillis));
         String data_hr = HRformattedDateTime + "," + String.valueOf(event.values[0]);
         Log.d(TAG, "hr_data: " + String.valueOf(event.values[0])); // 402550836440 , 401550836440
+
+
+        //IMPORTANT - Get device ID to be used in specific topic
+        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        String displayId = deviceId.substring(0, Math.min(deviceId.length(), 8)); // Display first 8 characters
+
+        // Prepare the MQTT message payload to include both accelerometer data and battery level
+        String mqttPayload = data_hr;
+
+
+
+
+        // existing code...
+        if (mqttHelper != null && mqttHelper.isConnected()) {
+            mqttHelper.publishMessage("AndroidWatch/hr/" + displayId, mqttPayload, new IMqttActionListener() {
+                @Override
+                public void onSuccess(IMqttToken asyncActionToken) {
+
+                }
+
+                @Override
+                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+
+                }
+                // Callback implementations...
+            });
+        } else {
+            Log.d(TAG, "MQTT Client is not connected");
+        }
+
         HRData.add(data_hr);
     }
 

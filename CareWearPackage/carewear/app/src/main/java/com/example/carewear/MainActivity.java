@@ -1,6 +1,7 @@
 package com.example.carewear;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
@@ -8,10 +9,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,6 +28,12 @@ import androidx.core.content.ContextCompat;
 import com.example.carewear.databinding.ActivityMainBinding;
 import com.google.firebase.FirebaseApp;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 /*
@@ -39,10 +51,31 @@ public class MainActivity extends Activity {
     Intent clockTimer;
     Intent intentSensorActivity;
 
+    private TextView internetStatusTextView; // TextView for displaying internet status
+
+    // BroadcastReceiver to listen for connectivity changes
+    private BroadcastReceiver networkChangeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            updateInternetStatus();
+        }
+    };
+    // Method to update the internet status indicator
+    private void updateInternetStatus() {
+        if (NetworkUtils.isNetworkAvailable(this)) {
+            internetStatusTextView.setText("Internet: Connected");
+            internetStatusTextView.setTextColor(Color.GREEN);
+        } else {
+            internetStatusTextView.setText("Internet: Not Connected");
+            internetStatusTextView.setTextColor(Color.RED);
+        }
+    }
+
     Intent intentSensorActivityAcc;
     Intent intentSensorActivityGry;
     Intent intentSensorActivityHr;
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,6 +89,8 @@ public class MainActivity extends Activity {
             // Handle the lack of connectivity here
             Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
         }
+
+
 
 
         Log.d(TAG, "Build Version -------- " + String.valueOf(Build.VERSION.SDK_INT));
@@ -79,9 +114,23 @@ public class MainActivity extends Activity {
         Log.i(TAG,"intentLocationService Service has started");
         requestPermissions();
 
+        //Display Internet Connection
+        // Initialize the TextView for internet status
+        internetStatusTextView = findViewById(R.id.internetStatusTextView);
+        updateInternetStatus(); // Initial check for internet connectivity
 
 
-        }
+        //ID
+        TextView deviceIdTextView = findViewById(R.id.deviceIdTextView);
+        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        String displayId = deviceId.substring(0, Math.min(deviceId.length(), 8)); // Display first 8 characters
+
+        // Set the processed ID to TextView
+        deviceIdTextView.setText("Device ID: " + displayId);
+
+    }
+
+
 
     // Method to check and request permissions
     private void requestPermissions() {
@@ -160,6 +209,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        // Unregister the BroadcastReceiver
+        unregisterReceiver(networkChangeReceiver);
     }
 
     @Override
@@ -167,6 +218,10 @@ public class MainActivity extends Activity {
         super.onResume();
         registerReceiver(broadcastReceiver,new IntentFilter(BackgroundTimer.COUNTDOWN_BR));
         Log.i(TAG,"Registered Broadcast Reviever");
+
+        // Register BroadcastReceiver to listen for connectivity changes
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(networkChangeReceiver, filter);
 
     }
 
