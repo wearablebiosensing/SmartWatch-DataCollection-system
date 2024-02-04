@@ -44,14 +44,21 @@ public class SensorService extends Service implements SensorEventListener {
     private long startTime;
     private static final String CHANNEL_ID = "sensor_notification_channel";
     // Global variables to store accelerometer and gyroscope values
-    private String[] accelerometerValues; //= new float[5];
-    private String[] gyroscopeValues ;//= new float[5];
+    private String[] accelerometerValues;
+    private String[] gyroscopeValues ;
     // Constants for sampling rate and duration
     private static final int SAMPLING_RATE_HZ = 30;
-    private static final long DURATION_IN_SECONDS = 60;
+
     // Arrays to store sensor data for one minute
     private List<String[]> accelerometerData = new ArrayList<>();
     private List<String[]> gyroscopeData = new ArrayList<>();
+
+    private Sensor heartRateSensor;
+    private String[] heartRateValues;
+    private List<String[]> heartRateData = new ArrayList<>();
+    private final Object heartRateLock = new Object();
+
+
     private long lastWriteTimestamp = 0;
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault());
     private long currentTimeMillis = System.currentTimeMillis();
@@ -63,7 +70,7 @@ public class SensorService extends Service implements SensorEventListener {
     // Other class-level variables
     private File sdCard = Environment.getExternalStorageDirectory();
     private String currentDateFile = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(new Date());
-    private final File dir = new File(sdCard.getAbsolutePath() + "/Download/");
+    private final File dir = new File(sdCard.getAbsolutePath() + "/Download/" + currentDateFile);
     private File directory;  // Declare directory as a class-level variable
     // Add these two objects for synchronization
     private final Object accelerometerLock = new Object();
@@ -75,7 +82,6 @@ public class SensorService extends Service implements SensorEventListener {
     @Override
     public void onCreate() {
         super.onCreate();
-        initCSVFile();
 
     }
     @Override
@@ -92,15 +98,18 @@ public class SensorService extends Service implements SensorEventListener {
 
     private void initSensors() {
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
+
         gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        sensorManager.registerListener(this, accelerometer,1000000 / 30);
-        sensorManager.registerListener(this, gyroscope,1000000 / 30);
+        sensorManager.registerListener(this, accelerometer,1000000 / SAMPLING_RATE_HZ);
+        sensorManager.registerListener(this, gyroscope,1000000 / SAMPLING_RATE_HZ);
+        sensorManager.registerListener(this, heartRateSensor, 1000000);  // 1 sample per second (1 Hz)
+
     }
     @RequiresApi(api = Build.VERSION_CODES.N)
     protected void onResume() {
-        initSensors();
+//        initSensors();
     }
     private void initCSVFile() {
         directory = new File(Environment.getExternalStorageDirectory(), "SensorData");
@@ -113,43 +122,39 @@ public class SensorService extends Service implements SensorEventListener {
             dir.mkdirs();
         }
 
-//        try {
-//            csvWriter = new FileWriter(csvFile, true);
-//            // Write CSV header if the file is newly created
-//            if (csvFile.length() == 0) {
-//                csvWriter.append("Timestamp,Accelerometer_X,Accelerometer_Y,Accelerometer_Z,Gyroscope_X,Gyroscope_Y,Gyroscope_Z\n");
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
     }
     private void startDataCollection() {
         long delayBetweenSamples = 1000 / SAMPLING_RATE_HZ; // Delay between samples in milliseconds
 
-        // Schedule the timer to run every sampling interval
+        // Schedule the timer to run every 5 minutes
         timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                // Log the number of samples collected
-                Log.d(TAG, "Samples Count: " + accelerometerData.size());
-
+//                Log.d(TAG, "Samples Count: " + accelerometerData.size());
                 // Save sensor data to arrays
-                if (accelerometerValues != null) {
-                    accelerometerData.add(accelerometerValues.clone());
-                }
+//                if (accelerometerValues != null) {
+//                    accelerometerData.add(accelerometerValues);
+//                }
+//
+//                if (gyroscopeValues != null) {
+//                    gyroscopeData.add(gyroscopeValues);
+//                }
+//                if (heartRateValues != null) {
+//                    heartRateData.add(heartRateValues);
+//                }
 
-                if (gyroscopeValues != null) {
-                    gyroscopeData.add(gyroscopeValues.clone());
-                }
-
-                // Check if one minute has passed
-                if (accelerometerData.size() >= DURATION_IN_SECONDS * SAMPLING_RATE_HZ) {
+                // Check if 5 minutes have passed since the last write
+                if (System.currentTimeMillis() - lastWriteTimestamp >= INTERVAL) {
                     // Create a new CSV file and write all data
                     saveSensorDataToCSV();
-                    // Reset arrays for the new minute
+                    // Reset arrays for the new 5-minute interval
                     accelerometerData.clear();
                     gyroscopeData.clear();
+                    // Update the last write timestamp
+                    lastWriteTimestamp = System.currentTimeMillis();
+                    // Update the start time for the next interval
+                    startTime = lastWriteTimestamp;
                 }
             }
         }, 0, delayBetweenSamples);
@@ -160,17 +165,42 @@ public class SensorService extends Service implements SensorEventListener {
             // Create copies of the lists to avoid ConcurrentModificationException
             List<String[]> accelerometerDataCopy = new ArrayList<>(accelerometerData);
             List<String[]> gyroscopeDataCopy = new ArrayList<>(gyroscopeData);
+            List<String[]> heartRateDataCopy = new ArrayList<>(heartRateData);
 
             // Write accelerometer data to CSV
             writeSensorDataToCSV(accelerometerDataCopy, "acc", timestampString);
-
             // Write gyroscope data to CSV
             writeSensorDataToCSV(gyroscopeDataCopy, "gry", timestampString);
+            writeSensorDataToCSV(heartRateDataCopy, "heart_rate", timestampString);
 
-            Log.d(TAG, "Saved Data to CSV========================");
+            Log.d(TAG, "======================== Saved Data to CSV ========================");
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    private void writeHeartRateDataToCSV(List<String[]> sensorData, String sensorType, String timestampString) throws IOException {
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
+        // Create separate CSV file for heart rate data
+        String sanitizedTimestamp = timestampString.replaceAll("[^a-zA-Z0-9.-]", "_");
+        File csvFile = new File(dir, sensorType + "_" + sanitizedTimestamp + ".csv");
+        FileWriter csvWriter = new FileWriter(csvFile, true);
+
+        // Write CSV header if the file is newly created
+        if (csvFile.length() == 0) {
+            csvWriter.append("HeartRate,Timestamp\n");
+        }
+
+        // Write heart rate data to CSV
+        for (String[] values : sensorData) {
+            csvWriter.append(values[0] + "," + values[1] + "\n");
+        }
+
+        // Flush the writer to ensure data is written immediately
+        csvWriter.flush();
+        csvWriter.close();
     }
 
 
@@ -178,9 +208,7 @@ public class SensorService extends Service implements SensorEventListener {
         if (!directory.exists()) {
             directory.mkdirs();
         }
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
+
         // Create separate CSV file for each sensor type
         String sanitizedTimestamp = timestampString.replaceAll("[^a-zA-Z0-9.-]", "_");
         File csvFile = new File(dir, sensorType + "_" + sanitizedTimestamp + ".csv");
@@ -188,25 +216,33 @@ public class SensorService extends Service implements SensorEventListener {
 
         // Write CSV header if the file is newly created
         if (csvFile.length() == 0) {
-//            csvWriter.append("Timestamp,X,Y,Z\n");
+            if (sensorType.equals("heart_rate")) {
+                csvWriter.append("HeartRate,Timestamp\n");
+            } else {
+                csvWriter.append("X,Y,Z,event.timestamp,Timestamp\n");
+            }
         }
 
         // Write sensor data to CSV
         for (String[] values : sensorData) {
-//            csvWriter.append(timestampString + ",");
-            csvWriter.append(values[0] + "," + values[1] + "," + values[2] +  "," + values[3] +  "," + values[4] + "\n");
+            if (sensorType.equals("heart_rate")) {
+                csvWriter.append(values[0] + "," + values[1] + "\n");
+            } else {
+                csvWriter.append(values[0] + "," + values[1] + "," + values[2] + "," + values[3] + "," + values[4] + "\n");
+            }
         }
 
         // Flush the writer to ensure data is written immediately
         csvWriter.flush();
         csvWriter.close();
     }
+
     public void onSensorChanged(SensorEvent event) {
         // Get current timestamp in milliseconds
         long currentTimeMillisSensorChanged = System.currentTimeMillis();
 
         // Format the current date and time as a human-readable timestamp
-        String formattedTimestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        String formattedTimestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
                 .format(new Date(currentTimeMillisSensorChanged));
 
         // Update sensor data as needed
@@ -218,26 +254,39 @@ public class SensorService extends Service implements SensorEventListener {
                 accelerometerValues[0] = String.valueOf(event.values[0]);
                 accelerometerValues[1] = String.valueOf(event.values[1]);
                 accelerometerValues[2] = String.valueOf(event.values[2]);
-                accelerometerValues[3] = String.valueOf(event.timestamp) ;  // Add timestamp in nanoseconds
+                accelerometerValues[3] = String.valueOf(event.timestamp);  // Add timestamp in nanoseconds
                 accelerometerValues[4] = formattedTimestamp; // Add timestamp in milliseconds
-                accelerometerData.add(accelerometerValues.clone());
+
+                // Add the data directly to the list without cloning
+                accelerometerData.add(accelerometerValues);
                 Log.d(TAG, "Timestamp: " + formattedTimestamp);
             }
         } else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
             synchronized (gyroscopeLock) {
                 gyroscopeValues = new String[5];
-
                 // Handle gyroscope data
-                gyroscopeValues[0] =  String.valueOf(event.values[0]);
+                gyroscopeValues[0] = String.valueOf(event.values[0]);
                 gyroscopeValues[1] = String.valueOf(event.values[1]);
                 gyroscopeValues[2] = String.valueOf(event.values[2]);
-                gyroscopeValues[3] = String.valueOf(event.timestamp) ;  // Add timestamp in nanoseconds
+                gyroscopeValues[3] = String.valueOf(event.timestamp);  // Add timestamp in nanoseconds
                 gyroscopeValues[4] = formattedTimestamp; // Add timestamp in milliseconds
-                gyroscopeData.add(gyroscopeValues.clone());
-//                Log.d(TAG, "Timestamp: " + formattedTimestamp);
+
+                // Add the data directly to the list without cloning
+                gyroscopeData.add(gyroscopeValues);
+            }
+        }
+        else if (event.sensor.getType() == Sensor.TYPE_HEART_RATE) {
+            Log.d(TAG, "Heart rate event received");
+            // Handle heart rate data
+            synchronized (heartRateLock) {
+                heartRateValues = new String[2];
+                heartRateValues[0] = String.valueOf(event.values[0]);  // Heart rate value
+                heartRateValues[1] = formattedTimestamp;  // Timestamp in milliseconds
+                heartRateData.add(heartRateValues);
             }
         }
     }
+
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -263,7 +312,11 @@ public class SensorService extends Service implements SensorEventListener {
 
         if (sensorManager != null) {
             sensorManager.unregisterListener(this);
+            sensorManager.unregisterListener(this, heartRateSensor);
+
         }
+
+
 
         try {
             if (csvWriter != null) {
@@ -279,6 +332,7 @@ public class SensorService extends Service implements SensorEventListener {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Foreground Service")
                 .setContentText("Collecting sensor data")
+                .setContentText("Collecting sensor data including heart rate")
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
