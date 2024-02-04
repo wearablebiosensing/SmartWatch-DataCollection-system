@@ -39,7 +39,7 @@ public class SensorService extends Service implements SensorEventListener {
     private Sensor accelerometer, gyroscope;
     private FileWriter csvWriter;
     private Timer timer;
-    private static final long INTERVAL = 1 * 60 * 1000; // 1 minutes in milliseconds
+    private static final long INTERVAL = 5 * 60 * 1000; // 1 minutes in milliseconds
     private static final int NOTIFICATION_ID = 1;
     private long startTime;
     private static final String CHANNEL_ID = "sensor_notification_channel";
