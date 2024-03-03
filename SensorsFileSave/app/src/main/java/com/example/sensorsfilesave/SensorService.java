@@ -49,8 +49,6 @@ public class SensorService extends Service implements SensorEventListener {
     // Global variables to store accelerometer and gyroscope values
     private String[] accelerometerValues;
     private String[] gyroscopeValues;
-
-
     // Arrays to store sensor data for one minute
     private List<String[]> accelerometerData = new ArrayList<>();
     private List<String[]> gyroscopeData = new ArrayList<>();
@@ -135,7 +133,7 @@ public class SensorService extends Service implements SensorEventListener {
             @Override
             public void run() {
                 long ts_diff = (System.currentTimeMillis() - lastWriteTimestamp)/1000;
-                Log.d(TAG, String.format("Time Elapsed: " + ts_diff));
+                Log.d(TAG, String.format("Time Elapsed in seconds: " + ts_diff));
                 // Check if the number of samples collected within 5 minutes has reached the expected value
                 if (System.currentTimeMillis() - lastWriteTimestamp >= (5 * 60 * 1000)) {
                     startTime = System.currentTimeMillis();
@@ -147,6 +145,7 @@ public class SensorService extends Service implements SensorEventListener {
                     // Clear the sensor data lists for the next interval
                     accelerometerData.clear();
                     gyroscopeData.clear();
+                    heartRateData.clear();
                 }
             }
         }, 0, delayBetweenSamples);
