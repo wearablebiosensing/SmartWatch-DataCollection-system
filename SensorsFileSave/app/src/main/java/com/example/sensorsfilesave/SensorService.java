@@ -8,6 +8,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.GradientDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -36,7 +37,7 @@ public class SensorService extends Service implements SensorEventListener {
     String TAG = "SensorService";
     // Check and request necessary permissions
     private SensorManager sensorManager;
-    private Sensor accelerometer, gyroscope;
+    private Sensor accelerometer, gyroscope,orientation;
     private FileWriter csvWriter;
     private Timer timer;
     // Constants for sampling rate and duration
@@ -52,12 +53,12 @@ public class SensorService extends Service implements SensorEventListener {
     // Arrays to store sensor data for one minute
     private List<String[]> accelerometerData = new ArrayList<>();
     private List<String[]> gyroscopeData = new ArrayList<>();
+    private List<String[]> heartRateData = new ArrayList<>();
+    private List<String[]> orientationData = new ArrayList<>();
 
     private Sensor heartRateSensor;
     private String[] heartRateValues;
-    private List<String[]> heartRateData = new ArrayList<>();
-    private final Object heartRateLock = new Object();
-
+    private String[] orientationValues;
 
     private long lastWriteTimestamp = System.currentTimeMillis();
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault());
@@ -75,7 +76,9 @@ public class SensorService extends Service implements SensorEventListener {
     // Add these two objects for synchronization
     private final Object accelerometerLock = new Object();
     private final Object gyroscopeLock = new Object();
-
+    private final Object heartRateLock = new Object();
+    private final Object OrientationLock = new Object();
+    
     public static Intent getStartIntent(Context context) {
         return new Intent(context, SensorService.class);
     }
@@ -103,9 +106,13 @@ public class SensorService extends Service implements SensorEventListener {
         heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
 
         gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        orientation = sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
 
-        sensorManager.registerListener(this, accelerometer,1000000 / SAMPLING_RATE_HZ);
-        sensorManager.registerListener(this, gyroscope,1000000 / SAMPLING_RATE_HZ);
+
+        sensorManager.registerListener(this, accelerometer,1000000 / SAMPLING_RATE_HZ,1000000 / SAMPLING_RATE_HZ);
+        sensorManager.registerListener(this, gyroscope,1000000 / SAMPLING_RATE_HZ,1000000 / SAMPLING_RATE_HZ);
+        sensorManager.registerListener(this, orientation,1000000 / SAMPLING_RATE_HZ,1000000 / SAMPLING_RATE_HZ);
+
         sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_NORMAL);  // 1 sample per second (1 Hz)
     }
     @RequiresApi(api = Build.VERSION_CODES.N)
@@ -139,23 +146,26 @@ public class SensorService extends Service implements SensorEventListener {
                     startTime = System.currentTimeMillis();
                     initCSVFile();
                     // Save sensor data to CSV files
-                    saveSensorDataToCSV(accelerometerData,gyroscopeData,heartRateData);
+                    saveSensorDataToCSV(accelerometerData,gyroscopeData,orientationData,heartRateData);
                     lastWriteTimestamp = System.currentTimeMillis();
 
                     // Clear the sensor data lists for the next interval
                     accelerometerData.clear();
                     gyroscopeData.clear();
                     heartRateData.clear();
+                    orientationData.clear();
                 }
             }
         }, 0, delayBetweenSamples);
     }
-    private void saveSensorDataToCSV(List<String[]> accelerometerData,List<String[]> gyroscopeData,List<String[]> heartRateData) {
+    private void saveSensorDataToCSV(List<String[]> accelerometerData,List<String[]> gyroscopeData,List<String[]> orientationData, List<String[]> heartRateData) {
         try {
             initCSVFile();
             // Create copies of the lists to avoid ConcurrentModificationException
             List<String[]> accelerometerDataCopy = new ArrayList<>(accelerometerData);
             List<String[]> gyroscopeDataCopy = new ArrayList<>(gyroscopeData);
+            List<String[]> orientationDataCopy = new ArrayList<>(orientationData);
+
             List<String[]> heartRateDataCopy = new ArrayList<>(heartRateData);
             // Update timestampString for the current interval
             timestampString = sdf.format(new Date(System.currentTimeMillis()));
@@ -170,8 +180,10 @@ public class SensorService extends Service implements SensorEventListener {
             writeSensorDataToCSV(gyroscopeDataCopy, "gry", timestampString);
             Log.d(TAG, "========================    GRY Saved Data to CSV ========================" + timestampString);
 
-            writeSensorDataToCSV(heartRateDataCopy, "heart_rate", timestampString + timestampString);
+            writeSensorDataToCSV(orientationDataCopy, "orientation", timestampString);
+            Log.d(TAG, "========================    Roll,Pitch,Yaw Saved Data to CSV ========================" + timestampString);
 
+            writeSensorDataToCSV(heartRateDataCopy, "heart_rate", timestampString + timestampString);
             Log.d(TAG, "========================    HR Saved Data to CSV ========================" + timestampString);
         } catch (IOException e) {
             e.printStackTrace();
@@ -221,11 +233,13 @@ public class SensorService extends Service implements SensorEventListener {
         if (csvFile.length() == 0) {
             if (sensorType.equals("heart_rate")) {
                 csvWriter.append("HeartRate,Timestamp\n");
-            } else {
+            } else if (sensorType.equals("orientation")){
+                csvWriter.append("roll,pitch,yaw,event.timestamp,Timestamp\n");
+            }
+            else if (sensorType.equals("gry")){
                 csvWriter.append("X,Y,Z,event.timestamp,Timestamp\n");
             }
         }
-
         // Write sensor data to CSV
         for (String[] values : sensorData) {
             if (sensorType.equals("heart_rate")) {
@@ -253,7 +267,6 @@ public class SensorService extends Service implements SensorEventListener {
             synchronized (accelerometerLock) {
                 accelerometerValues = new String[5];
 //                Log.d(TAG, "Accelerometer  event received");
-
                 // Handle accelerometer data
                 accelerometerValues[0] = String.valueOf(event.values[0]);
                 accelerometerValues[1] = String.valueOf(event.values[1]);
@@ -263,12 +276,9 @@ public class SensorService extends Service implements SensorEventListener {
 
                 // Add the data directly to the list without cloning
                 accelerometerData.add(accelerometerValues);
-               // Log.d(TAG, "Timestamp: " + formattedTimestamp);
             }
         } else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
             synchronized (gyroscopeLock) {
-//                Log.d(TAG, "Gry  event received");
-
                 gyroscopeValues = new String[5];
                 // Handle gyroscope data
                 gyroscopeValues[0] = String.valueOf(event.values[0]);
@@ -289,6 +299,21 @@ public class SensorService extends Service implements SensorEventListener {
                 heartRateValues[0] = String.valueOf(event.values[0]);  // Heart rate value
                 heartRateValues[1] = formattedTimestamp;  // Timestamp in milliseconds
                 heartRateData.add(heartRateValues);
+            }
+        }
+        else if (event.sensor.getType() == Sensor.TYPE_ORIENTATION) {
+            // Log.d(TAG, "Heart rate event received");
+            // Handle heart rate data
+            synchronized (OrientationLock) {
+
+                orientationValues = new String[5];
+                // Handle accelerometer data
+                orientationValues[0] = String.valueOf(event.values[0]); // Azimuth (angle around the z-axis). Degrees
+                orientationValues[1] = String.valueOf(event.values[1]); // Pitch (angle around the x-axis). Degrees
+                orientationValues[2] = String.valueOf(event.values[2]);// Roll (angle around the y-axis). Degrees
+                orientationValues[3] = String.valueOf(event.timestamp) ;//String.valueOf(event.timestamp);  // Add timestamp in nanoseconds
+                orientationValues[4] = formattedTimestamp; // Add timestamp in milliseconds
+                orientationData.add(orientationValues);
             }
         }
     }
