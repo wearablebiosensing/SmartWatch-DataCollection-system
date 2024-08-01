@@ -1,4 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <androidx.wear.widget.WearableRecyclerView
+        android:id="@+id/wearable_recycler_view"
+        android:layout_width="127dp"
+        android:layout_height="140dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="49dp"
+        android:layout_marginTop="41dp"
+        android:layout_marginEnd="51dp"
+        android:layout_marginBottom="46dp"
+        android:scrollbars="vertical" />
+
+</RelativeLayout>
+
+<!--
+
+<?xml version="1.0" encoding="utf-8"?>
 <androidx.wear.widget.BoxInsetLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -20,5 +46,40 @@
             android:layout_height="wrap_content"
             android:text="@string/hello_world" />
 
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:boxStrokeWidthFocused="0sp"
+            app:boxStrokeWidth="0sp"
+            android:hint="Select"
+            android:id="@+id/inputLayout"
+            android:layout_marginStart="25sp"
+            android:layout_marginEnd="25sp"
+            android:layout_centerInParent="true"
+            style="@style/Widget.Material3.TextInputLayout.FilledBox.ExposedDropdownMenu"
+            app:boxCornerRadiusTopStart="10sp"
+            app:boxCornerRadiusTopEnd="10sp"
+            app:boxCornerRadiusBottomStart="10sp"
+            app:boxCornerRadiusBottomEnd="10sp">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/inputTV"
+                android:inputType="none"
+                app:simpleItems="@array/options_list" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/inputLayout"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20sp"
+            android:id="@+id/btn"
+            android:text="Show toast"/>
+
     </FrameLayout>
-</androidx.wear.widget.BoxInsetLayout>
+
+</androidx.wear.widget.BoxInsetLayout>-->

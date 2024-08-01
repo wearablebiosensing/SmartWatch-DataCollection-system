@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<string-array name="options_list">
+    <item>
+        None
+    </item>
+    <item>
+        Rest_1
+    </item>
+    <item>
+        Prepare_speech
+    </item>
+    <item>
+        Give_speech
+    </item>
+    <item>
+        Rest_2
+    </item>
+    <item>
+        Mental_math
+    </item>
+    <item>
+        Rest_3
+    </item>
+    <item>
+        Stationary_bike
+    </item>
+</string-array>
+</resources>

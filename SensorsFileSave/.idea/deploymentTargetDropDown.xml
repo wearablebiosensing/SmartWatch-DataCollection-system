@@ -7,11 +7,11 @@
         <deviceKey>
           <Key>
             <type value="VIRTUAL_DEVICE_PATH" />
-            <value value="$USER_HOME$/.android/avd/CareHub_WearOS.avd" />
+            <value value="$USER_HOME$/.android/avd/English_2_-_Wear_OS_Small_Round_API_30.avd" />
           </Key>
         </deviceKey>
       </Target>
     </targetSelectedWithDropDown>
-    <timeTargetWasSelectedWithDropDown value="2024-03-03T23:40:39.048348Z" />
+    <timeTargetWasSelectedWithDropDown value="2024-08-01T20:54:44.844784Z" />
   </component>
 </project>

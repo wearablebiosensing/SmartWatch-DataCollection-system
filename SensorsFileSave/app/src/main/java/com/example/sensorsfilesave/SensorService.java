@@ -37,6 +37,7 @@ public class SensorService extends Service implements SensorEventListener {
     String TAG = "SensorService";
     // Check and request necessary permissions
     private SensorManager sensorManager;
+    private  String activity = "None";
     private Sensor accelerometer, gyroscope,orientation;
     private FileWriter csvWriter;
     private Timer timer;
@@ -90,11 +91,12 @@ public class SensorService extends Service implements SensorEventListener {
     }
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
+        if (intent != null && intent.hasExtra("SELECTED_ITEM")) {
+            activity = intent.getStringExtra("SELECTED_ITEM");
+        }
         startTime = System.currentTimeMillis();
         startForeground(NOTIFICATION_ID, createNotification());
         initSensors();
-//        initCSVFile();
         startDataCollection();
 
         return START_STICKY;
@@ -223,7 +225,6 @@ public class SensorService extends Service implements SensorEventListener {
         }
         Log.d(TAG, "writeSensorDataToCSV() ACC and GRY : timestampString: " + timestampString);
 
-
         // Create separate CSV file for each sensor type
         String sanitizedTimestamp = timestampString.replaceAll("[^a-zA-Z0-9.-]", "_");
         File csvFile = new File(dir, sensorType + "_" + sanitizedTimestamp + ".csv");
@@ -232,20 +233,21 @@ public class SensorService extends Service implements SensorEventListener {
         // Write CSV header if the file is newly created
         if (csvFile.length() == 0) {
             if (sensorType.equals("heart_rate")) {
-                csvWriter.append("HeartRate,Timestamp\n");
+                csvWriter.append("HeartRate,Timestamp,activity\n");
             } else if (sensorType.equals("orientation")){
-                csvWriter.append("roll,pitch,yaw,event.timestamp,Timestamp\n");
+                csvWriter.append("roll,pitch,yaw,event.timestamp,Timestamp,activity\n");
             }
             else if (sensorType.equals("gry")){
-                csvWriter.append("X,Y,Z,event.timestamp,Timestamp\n");
+                csvWriter.append("X,Y,Z,event.timestamp,Timestamp,activity\n");
             }
         }
         // Write sensor data to CSV
         for (String[] values : sensorData) {
             if (sensorType.equals("heart_rate")) {
-                csvWriter.append(values[0] + "," + values[1] + "\n");
+               // activity = getIntent().getStringExtra("SELECTED_ITEM");
+                csvWriter.append(values[0] + "," + values[1] + ","+ activity + "\n");
             } else {
-                csvWriter.append(values[0] + "," + values[1] + "," + values[2] + "," + values[3] + "," + values[4] + "\n");
+                csvWriter.append(values[0] + "," + values[1] + "," + values[2] + "," + values[3] + "," + values[4] + "," + activity+ "\n");
             }
         }
 
