@@ -6,19 +6,19 @@ A Smartwatch sensor data collection compatible with WearOS watch platforms. This
 v0.0.0: CareWearDAQ: With Bbackground timers and threading along with a customizable GUI for data collection.
 
 This app was a pre release test for 
-![alt text](https://github.com/wearablebiosensing/SmartWatch-DataCollection-system/blob/main/V0/appscreenshot.png)
+![alt text](https://github.com/wearablebiosensing/SmartWatch-DataCollection-system/blob/main/v0.0.0/appscreenshot.png)
 
 
 v1.0.0: CareWearDAQ: With Bbackground timers and threading.
 
 App Architecture:
 
-![alt text](https://github.com/wearablebiosensing/SmartWatch-DataCollection-system/blob/main/V1/carewear_apparch.png)
+![alt text](https://github.com/wearablebiosensing/SmartWatch-DataCollection-system/blob/main/v1.0.0/carewear_apparch.png)
 
 CareWear App Screenshot:
 App has minimal to no UI it runs in the background collects data and saves files to the device itself.
 
-![alt text](https://github.com/wearablebiosensing/SmartWatch-DataCollection-system/blob/main/V1/carewear_app.png)
+![alt text](https://github.com/wearablebiosensing/SmartWatch-DataCollection-system/blob/main/v1.0.0/carewear_app.png)
 
 v2.0.0: CareWearDAQ: With without bckground timers and threading.
 
