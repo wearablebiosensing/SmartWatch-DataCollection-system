@@ -105,4 +105,4 @@ We welcome contributions! Please open issues or pull requests for improvements, 
 ---
 
 **Contact:**  
-For questions or support, please open an issue or contact the maintainers.
+For questions or support, please open an issue or contact the maintainers. Shehjar Sadhu (She/Her) shehjar_sadhu@uri.edu.
