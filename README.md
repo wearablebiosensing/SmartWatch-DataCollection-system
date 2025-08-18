@@ -4,7 +4,7 @@ A Smartwatch sensor data collection compatible with WearOS watch platforms. This
 
 ![alt text](https://github.com/wearablebiosensing/SmartWatch-DataCollection-system/blob/main/Overview.png)
 
-v0.0.0: CareWearDAQ: With Bbackground timers and threading along with a customizable GUI for data collection.
+v0.0.0: CareWearDAQ: With Background timers and threading along with a customizable GUI for data collection.
 
 This app was a pre release test for 
 
