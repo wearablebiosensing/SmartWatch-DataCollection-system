@@ -1,6 +1,6 @@
 # Smart watch data collection system for Galaxy Watch 4
 
-A Smartwatch sensor data collection compatible with WearOS watch platforms. This repository was made for the CareWear Project.
+A Smartwatch sensor data collection compatible with WearOS watch platforms. This repository was made for the CareWear Project. It consists of different Galaxy watch app versions developed for collecting heart rate, accelerometer, and gyroscope data. 
 
 ![alt text](https://github.com/wearablebiosensing/SmartWatch-DataCollection-system/blob/main/Overview.png)
 
