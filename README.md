@@ -22,7 +22,7 @@ A sensor data collection application compatible with WearOS smartwatches, design
 
 ## Features
 
-- Collects sensor data (accelerometer, gyroscope, etc.) from Galaxy Watch 4 and other WearOS devices.
+- Collects sensor data (heart rate, accelerometer, gyroscope, etc.) from Galaxy Watch 4 and other WearOS devices.
 - Multiple app versions for different data collection needs.
 - Wireless data transfer via MQTT (v3.0.0).
 - Companion Python Flask dashboard for live data visualization (v3.0.0).
